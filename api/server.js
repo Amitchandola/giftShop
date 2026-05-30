@@ -55,18 +55,18 @@ app.use("/api/checkout-otp", checkoutOtpRoutes);
 const port = process.env.PORT || 1000;
 
 // Decode base64 password and inject into connection string
-// const mongoPassword = Buffer.from(process.env.MONGO_PASSWORD_B64, "base64").toString("utf-8");
-// const mongoUri = process.env.MONGO_URI.replace("<PASSWORD>", encodeURIComponent(mongoPassword));
+const mongoPassword = Buffer.from(process.env.MONGO_PASSWORD_B64, "base64").toString("utf-8");
+const mongoUri = process.env.MONGO_URI.replace("<PASSWORD>", encodeURIComponent(mongoPassword));
 
-// mongoose
-//   .connect(mongoUri, {
-//     minPoolSize: 2,                  // Keep only 2 connections warm during low traffic
-//     maxPoolSize: 50,                 // Scale up to 50 per replica member under load (~150 total)
-//     maxIdleTimeMS: 30 * 60 * 1000,  // Close idle connections after 30 minutes
-//     serverSelectionTimeoutMS: 5000,
-//     socketTimeoutMS: 45000,
-//   })
-// const port = process.env.PORT || 1000;
+mongoose
+   .connect(mongoUri, {
+     minPoolSize: 2,                  // Keep only 2 connections warm during low traffic
+     maxPoolSize: 50,                 // Scale up to 50 per replica member under load (~150 total)
+     maxIdleTimeMS: 30 * 60 * 1000,  // Close idle connections after 30 minutes
+     serverSelectionTimeoutMS: 5000,
+     socketTimeoutMS: 45000,
+   })
+ const port = process.env.PORT || 1000;
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {

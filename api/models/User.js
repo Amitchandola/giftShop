@@ -18,6 +18,13 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+    isGuest: {
+    type: Boolean,
+    default: false,   // 
+  },
+   phone: {
+    type: String,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

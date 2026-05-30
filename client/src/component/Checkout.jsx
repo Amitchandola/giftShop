@@ -19,6 +19,8 @@ function Checkout() {
     guestCheckout,
     loading,
     clearCart,
+    // setCheckoutVerifiedEmail,
+  
   } = useContext(AppContext);
 
   const [qty, setQty] = useState(0);
@@ -30,7 +32,10 @@ function Checkout() {
   const [paymentStatus, setPaymentStatus] = useState(null); // "success" | "failed" | null
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [paymentMode, setPaymentMode] = useState("upi"); // "upi" | "cod"
-
+const [otpSent, setOtpSent] = useState(false);
+const [otp, setOtp] = useState("");
+const [otpLoading, setOtpLoading] = useState(false);
+const { setOtpVerified } = useContext(AppContext);
   // Address form
   const [addressForm, setAddressForm] = useState({
     fullName: "",
@@ -49,8 +54,126 @@ function Checkout() {
     email: "",
     phone: "",
   });
+  const sendOtp = async () => {
+  if (!guestForm.email) {
+    toast.error("Enter email first");
+    return;
+  }
+
+  setOtpLoading(true);
+
+  try {
+    const res = await fetch(
+      `${import.meta.env.VITE_API_URL}/api/checkout-otp/send`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+    email: guestForm.email.trim().toLowerCase(),
+            otp: otp.trim(), 
+        }),
+      }
+    );
+
+    const data = await res.json();
+
+    if (data.success) {
+      toast.success("OTP sent to email");
+      setOtpSent(true);
+    } else {
+      toast.error(data.message || "Failed to send OTP");
+    }
+  } catch (err) {
+    toast.error("OTP error");
+  } finally {
+    setOtpLoading(false);
+  }
+};
 
   const navigate = useNavigate();
+
+//   const verifyOtpAndContinue = async () => {
+//   if (!otp) {
+//     toast.error("Enter OTP");
+//     return;
+//   }
+
+//   try {
+//     const res = await fetch(
+//       `${import.meta.env.VITE_API_URL}/api/users/verify-otp`,
+//       {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify({
+//           email: guestForm.email,
+        
+          
+//         }),
+//       }
+//     );
+
+//     const data = await res.json();
+
+//     if (!data.success) {
+//       toast.error(data.message);
+//       return;
+//     }
+
+//     const result = await guestCheckout(
+//       guestForm.name,
+//       guestForm.email,
+//       guestForm.phone
+//     );
+
+//     if (result?.success) {
+//       toast.success("Guest login successful");
+//       setGuestStep("done");
+//     }
+
+//   } catch (err) {
+//     toast.error("OTP verification failed");
+//   }
+// };
+const verifyOtpAndContinue = async () => {
+  if (!otp) {
+    toast.error("Enter OTP");
+    return;
+  }
+
+  try {
+    const res = await fetch(
+      `${import.meta.env.VITE_API_URL}/api/checkout-otp/verify`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: guestForm.email.trim().toLowerCase(),
+      otp: String(otp).trim(),
+        }),
+      }
+    );
+
+    const data = await res.json();
+
+if (!data.success) {
+  toast.error(data.message);
+  return;
+}
+
+const result = await guestCheckout(
+  guestForm.name,
+  guestForm.email,
+  guestForm.phone
+);
+
+    if (result?.success) {
+      toast.success("Guest login successful");
+      setGuestStep("done");
+    }
+  } catch (err) {
+    toast.error("OTP verification failed");
+  }
+};
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -77,21 +200,21 @@ function Checkout() {
   const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${price}&cu=INR&tn=${encodeURIComponent(message)}`;
 
   // Guest form submit
-  const handleGuestSubmit = async (e) => {
-    e.preventDefault();
-    if (!guestForm.name || !guestForm.email || !guestForm.phone) {
-      toast.error("Please fill all fields");
-      return;
-    }
-    if (!/^\d{10}$/.test(guestForm.phone)) {
-      toast.error("Phone number must be exactly 10 digits");
-      return;
-    }
-    const res = await guestCheckout(guestForm.name, guestForm.email, guestForm.phone);
-    if (res?.success) {
-      setGuestStep("done");
-    }
-  };
+ const handleGuestSubmit = (e) => {
+  e.preventDefault();
+
+  if (!guestForm.name || !guestForm.email || !guestForm.phone) {
+    toast.error("Please fill all fields");
+    return;
+  }
+
+  if (!/^\d{10}$/.test(guestForm.phone)) {
+    toast.error("Phone number must be exactly 10 digits");
+    return;
+  }
+
+  sendOtp();
+};
 
   // Add address inline
   const handleAddAddress = async (e) => {
@@ -226,9 +349,38 @@ function Checkout() {
               <input type="text" placeholder="Full Name" value={guestForm.name} onChange={(e) => setGuestForm({ ...guestForm, name: e.target.value })} className="w-full border border-gray-600 bg-gray-700 text-white placeholder-gray-400 p-3 rounded-lg" required />
               <input type="email" placeholder="Email Address" value={guestForm.email} onChange={(e) => setGuestForm({ ...guestForm, email: e.target.value })} className="w-full border border-gray-600 bg-gray-700 text-white placeholder-gray-400 p-3 rounded-lg" required />
               <input type="tel" placeholder="Phone (10 digits)" value={guestForm.phone} onChange={(e) => { const val = e.target.value.replace(/\D/g, "").slice(0, 10); setGuestForm({ ...guestForm, phone: val }); }} maxLength={10} className="w-full border border-gray-600 bg-gray-700 text-white placeholder-gray-400 p-3 rounded-lg" required />
-              <button type="submit" disabled={loading} className={`w-full py-3 rounded-lg font-semibold transition ${loading ? "bg-gray-600 cursor-not-allowed text-gray-400" : "bg-amber-500 text-black hover:bg-amber-600"}`}>
+              {/* <button type="submit" disabled={loading} className={`w-full py-3 rounded-lg font-semibold transition ${loading ? "bg-gray-600 cursor-not-allowed text-gray-400" : "bg-amber-500 text-black hover:bg-amber-600"}`}>
                 {loading ? "Processing..." : "Continue"}
-              </button>
+              </button> */}
+              {!otpSent && (
+  <button
+    type="button"
+    onClick={sendOtp}
+    disabled={otpLoading}
+    className="w-full py-3 bg-amber-500 text-black rounded-lg"
+  >
+    {otpLoading ? "Sending OTP..." : "Send OTP"}
+  </button>
+)}
+{otpSent && (
+  <div className="space-y-3">
+    <input
+      type="text"
+      placeholder="Enter OTP"
+      value={otp}
+      onChange={(e) => setOtp(e.target.value)}
+      className="w-full p-3 bg-gray-700 text-white rounded-lg"
+    />
+
+    <button
+      type="button"
+      onClick={verifyOtpAndContinue}
+      className="w-full py-3 bg-green-500 text-black rounded-lg"
+    >
+      Verify OTP & Continue
+    </button>
+  </div>
+)}
             </form>
             <div className="mt-4 text-center text-sm text-gray-400">
               Already have an account?{" "}

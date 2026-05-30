@@ -19,12 +19,16 @@ function AppState(props) {
   const [cart, setCart] = useState([]);
   const [reloadCart, setReloadCart] = useState(false);
 
+
   // ✅ FIXED: always array (VERY IMPORTANT)
   const [userAddress, setUserAddress] = useState([]);
 
   // Wishlist state — array of product IDs
   const [wishlist, setWishlist] = useState([]);
 
+  // checkout otp state
+  // const [checkoutVerifiedEmail, setCheckoutVerifiedEmail] = useState(null);
+const [otpVerified, setOtpVerified] = useState(false);
   // Load guest cart from localStorage on mount
   useEffect(() => {
     const guestCart = localStorage.getItem("guestCart");
@@ -90,11 +94,14 @@ function AppState(props) {
     if (storedToken) {
       setToken(storedToken);
       setIsAuthenticated(true);
+    } else {
+      setToken("");
+      setIsAuthenticated(false);
     }
   }, []);
 
   // 🔹 Register
-  const register = async (name, email, password) => {
+  const register = async (name, email, password, otp) => {
     try {
       setLoading(true);
 
@@ -102,6 +109,7 @@ function AppState(props) {
         name,
         email,
         password,
+        otp,
       });
 
       toast.success(api.data.message || "Registered successfully");
@@ -112,7 +120,9 @@ function AppState(props) {
         localStorage.setItem("token", newToken);
 
         // Merge guest cart (don't send imageSrc — backend uses product's own image)
-        const guestItems = JSON.parse(localStorage.getItem("guestCart") || "[]");
+        const guestItems = JSON.parse(
+          localStorage.getItem("guestCart") || "[]",
+        );
         if (guestItems.length > 0) {
           try {
             for (const item of guestItems) {
@@ -125,7 +135,10 @@ function AppState(props) {
                     price: item.price,
                   },
                   {
-                    headers: { "Content-Type": "application/json", Auth: newToken },
+                    headers: {
+                      "Content-Type": "application/json",
+                      Auth: newToken,
+                    },
                     withCredentials: true,
                   },
                 );
@@ -149,7 +162,9 @@ function AppState(props) {
         }
 
         // Merge guest wishlist into backend
-        const guestWishlistItems = JSON.parse(localStorage.getItem("guestWishlist") || "[]");
+        const guestWishlistItems = JSON.parse(
+          localStorage.getItem("guestWishlist") || "[]",
+        );
         if (guestWishlistItems.length > 0) {
           try {
             for (const productId of guestWishlistItems) {
@@ -157,7 +172,10 @@ function AppState(props) {
                 `${url}/wishlist/toggle`,
                 { productId },
                 {
-                  headers: { "Content-Type": "application/json", Auth: newToken },
+                  headers: {
+                    "Content-Type": "application/json",
+                    Auth: newToken,
+                  },
                   withCredentials: true,
                 },
               );
@@ -248,7 +266,10 @@ function AppState(props) {
                   // product's own image from the database automatically.
                 },
                 {
-                  headers: { "Content-Type": "application/json", Auth: newToken },
+                  headers: {
+                    "Content-Type": "application/json",
+                    Auth: newToken,
+                  },
                   withCredentials: true,
                 },
               );
@@ -272,7 +293,9 @@ function AppState(props) {
       }
 
       // Merge guest wishlist into backend
-      const guestWishlistItems = JSON.parse(localStorage.getItem("guestWishlist") || "[]");
+      const guestWishlistItems = JSON.parse(
+        localStorage.getItem("guestWishlist") || "[]",
+      );
       if (guestWishlistItems.length > 0) {
         try {
           for (const productId of guestWishlistItems) {
@@ -378,7 +401,14 @@ function AppState(props) {
             added = true;
             return [
               ...prev,
-              { productId, title, price, imageSrc, qty: 1, stockQty: stockLimit },
+              {
+                productId,
+                title,
+                price,
+                imageSrc,
+                qty: 1,
+                stockQty: stockLimit,
+              },
             ];
           }
         });
@@ -401,13 +431,17 @@ function AppState(props) {
 
       // ✅ stock limit reached
       if (!api.data.success) {
-        toast.error(api.data.message || "Stock limit reached", { toastId: "stock-limit" });
+        toast.error(api.data.message || "Stock limit reached", {
+          toastId: "stock-limit",
+        });
         return;
       }
 
       // ✅ update cart only after backend success
       setCart(api.data.cart?.items || []);
-      toast.success(api.data.message || "Added to cart", { toastId: "cart-add" });
+      toast.success(api.data.message || "Added to cart", {
+        toastId: "cart-add",
+      });
 
       setReloadCart((prev) => !prev);
     } catch (err) {
@@ -452,9 +486,7 @@ function AppState(props) {
           return prev.filter((i) => i.productId !== productId);
         }
         return prev.map((item) =>
-          item.productId === productId
-            ? { ...item, qty: item.qty - 1 }
-            : item,
+          item.productId === productId ? { ...item, qty: item.qty - 1 } : item,
         );
       });
       return;
@@ -617,80 +649,160 @@ function AppState(props) {
   };
 
   // 🔹 Guest Checkout — find or create user, get token, sync cart
+  // const guestCheckout = async (name, email, phone) => {
+  //   try {
+  //     setLoading(true);
+
+  
+
+  //     const api = await axios.post(`${url}/users/guest-checkout`, {
+  //       name,
+  //       email,
+  //       phone,
+    
+  //     });
+
+  //     if (!api.data.success) {
+  //       toast.error(api.data.message || "Checkout failed");
+  //       return { success: false };
+  //     }
+
+  //     // Save token and authenticate
+  //     const newToken = api.data.token;
+  //     setToken(newToken);
+  //     setIsAuthenticated(true);
+  //     localStorage.setItem("token", newToken);
+
+  //     // Sync guest cart items to backend
+  //     const guestItems = JSON.parse(localStorage.getItem("guestCart") || "[]");
+
+  //     for (const item of guestItems) {
+  //       for (let i = 0; i < item.qty; i++) {
+  //         await axios.post(
+  //           `${url}/cart/add`,
+  //           {
+  //             productId: item.productId,
+  //             title: item.title,
+  //             price: item.price,
+  //             imageSrc: item.imageSrc,
+  //           },
+  //           {
+  //             headers: {
+  //               "Content-Type": "application/json",
+  //               Auth: newToken,
+  //             },
+  //             withCredentials: true,
+  //           },
+  //         );
+  //       }
+  //     }
+
+  //     // Clear guest cart from localStorage
+  //     localStorage.removeItem("guestCart");
+
+  //     // Refresh backend cart
+  //     const cartApi = await axios.get(`${url}/cart/user`, {
+  //       headers: { Auth: newToken },
+  //       withCredentials: true,
+  //     });
+  //     setCart(cartApi?.data?.cart?.items || []);
+
+  //     // Fetch user profile
+  //     const profileApi = await axios.get(`${url}/users/profile`, {
+  //       headers: { Auth: newToken },
+  //       withCredentials: true,
+  //     });
+  //     setUser(profileApi.data.user);
+
+  //     toast.success(api.data.message);
+  //     return api.data;
+  //   } catch (error) {
+  //     console.error(error);
+  //     toast.error(error.response?.data?.message || "Checkout failed");
+  //     return { success: false };
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
   const guestCheckout = async (name, email, phone) => {
-    try {
-      setLoading(true);
+  try {
+    setLoading(true);
 
-      const api = await axios.post(`${url}/users/guest-checkout`, {
-        name,
-        email,
-        phone,
-      });
+    // normalize inputs
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPhone = phone.trim();
 
-      if (!api.data.success) {
-        toast.error(api.data.message || "Checkout failed");
-        return { success: false };
-      }
+    const api = await axios.post(`${url}/users/guest-checkout`, {
+      name,
+      email: cleanEmail,
+      phone: cleanPhone,
+    });
 
-      // Save token and authenticate
-      const newToken = api.data.token;
-      setToken(newToken);
-      setIsAuthenticated(true);
-      localStorage.setItem("token", newToken);
-
-      // Sync guest cart items to backend
-      const guestItems = JSON.parse(
-        localStorage.getItem("guestCart") || "[]",
-      );
-
-      for (const item of guestItems) {
-        for (let i = 0; i < item.qty; i++) {
-          await axios.post(
-            `${url}/cart/add`,
-            {
-              productId: item.productId,
-              title: item.title,
-              price: item.price,
-              imageSrc: item.imageSrc,
-            },
-            {
-              headers: {
-                "Content-Type": "application/json",
-                Auth: newToken,
-              },
-              withCredentials: true,
-            },
-          );
-        }
-      }
-
-      // Clear guest cart from localStorage
-      localStorage.removeItem("guestCart");
-
-      // Refresh backend cart
-      const cartApi = await axios.get(`${url}/cart/user`, {
-        headers: { Auth: newToken },
-        withCredentials: true,
-      });
-      setCart(cartApi?.data?.cart?.items || []);
-
-      // Fetch user profile
-      const profileApi = await axios.get(`${url}/users/profile`, {
-        headers: { Auth: newToken },
-        withCredentials: true,
-      });
-      setUser(profileApi.data.user);
-
-      toast.success(api.data.message);
-      return api.data;
-    } catch (error) {
-      console.error(error);
-      toast.error(error.response?.data?.message || "Checkout failed");
+    if (!api.data.success) {
+      toast.error(api.data.message || "Checkout failed");
       return { success: false };
-    } finally {
-      setLoading(false);
     }
-  };
+
+    // Save token and authenticate
+    const newToken = api.data.token;
+    setToken(newToken);
+    setIsAuthenticated(true);
+    localStorage.setItem("token", newToken);
+
+    // Sync guest cart to backend
+    const guestItems = JSON.parse(localStorage.getItem("guestCart") || "[]");
+
+    for (const item of guestItems) {
+      for (let i = 0; i < item.qty; i++) {
+        await axios.post(
+          `${url}/cart/add`,
+          {
+            productId: item.productId,
+            title: item.title,
+            price: item.price,
+            imageSrc: item.imageSrc,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Auth: newToken,
+            },
+            withCredentials: true,
+          }
+        );
+      }
+    }
+
+    // Clear guest cart
+    localStorage.removeItem("guestCart");
+
+    // Refresh cart
+    const cartApi = await axios.get(`${url}/cart/user`, {
+      headers: { Auth: newToken },
+      withCredentials: true,
+    });
+
+    setCart(cartApi?.data?.cart?.items || []);
+
+    // Get profile
+    const profileApi = await axios.get(`${url}/users/profile`, {
+      headers: { Auth: newToken },
+      withCredentials: true,
+    });
+
+    setUser(profileApi.data.user);
+
+    // toast.success(api.data.message || "Guest checkout successful");
+
+    return api.data;
+  } catch (error) {
+    console.error(error);
+    toast.error(error.response?.data?.message || "Checkout failed");
+    return { success: false };
+  } finally {
+    setLoading(false);
+  }
+};
 
   // 🔹 Update user name
   const updateName = async (name) => {
@@ -704,7 +816,7 @@ function AppState(props) {
             Auth: token || localStorage.getItem("token"),
           },
           withCredentials: true,
-        }
+        },
       );
       if (res.data.success) {
         setUser(res.data.user);
@@ -896,6 +1008,10 @@ function AppState(props) {
         toggleWishlist,
         isWishlisted,
         refreshProducts,
+        otpVerified,
+        setOtpVerified,
+//         checkoutVerifiedEmail,
+// setCheckoutVerifiedEmail,
       }}
     >
       {props.children}

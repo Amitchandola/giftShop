@@ -50,6 +50,10 @@ function Login() {
             <input
               type="email"
               name="email"
+                  autoComplete="off"
+  autoCorrect="off"
+  autoCapitalize="off"
+  spellCheck="false"
               placeholder="example@email.com"
               value={form.email}
               onChange={handleChange}
@@ -75,6 +79,7 @@ function Login() {
             <input
               type={showPassword ? "text" : "password"}
               name="password"
+               autoComplete="new-password"
               placeholder="••••••••"
               value={form.password}
               onChange={handleChange}

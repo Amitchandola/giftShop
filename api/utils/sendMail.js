@@ -1,47 +1,4 @@
-// import nodemailer from "nodemailer";
 
-// const sendOwnerMail = async (orderDetails) => {
-//   try {
-//     const transporter = nodemailer.createTransport({
-//       service: "gmail",
-//       auth: {
-//         user: "mtmohit76@gmail.com", // owner gmail
-//         pass: "yghe ormc ekns tsir", // gmail app password
-//       },
-//     });
-
-//     const mailOptions = {
-//       from: "mtmohit76@gmail.com",
-//       to: "mtmohit76@gmail.com", // owner receives mail
-//       subject: "🛒 New Order Received",
-//       html: `
-//         <h2>New Order Alert</h2>
-//         <p><strong>Customer:</strong> ${orderDetails.userName}</p>
-//         <p><strong>Total Amount:</strong> ₹${orderDetails.totalPrice}</p>
-//         <p><strong>Address:</strong> ${orderDetails.address}</p>
-//         <p><strong>Products:</strong></p>
-//         <ul>
-//           ${orderDetails.items
-//             .map(
-//               (item) =>
-//                 `<li>${item.title} - Qty: ${item.qty} - ₹${item.price}</li>`,
-//             )
-//             .join("")}
-//         </ul>
-//       `,
-//     };
-
-//     await transporter.sendMail(mailOptions);
-
-//     console.log("Owner mail sent successfully");
-//     return true;
-//   } catch (error) {
-//     console.log("Mail Error:", error.message);
-//     return false;
-//   }
-// };
-
-// export default sendOwnerMail;
 import nodemailer from "nodemailer";
 
 const sendOrderMails = async (orderDetails) => {

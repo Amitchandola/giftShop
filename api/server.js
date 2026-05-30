@@ -1,6 +1,19 @@
-import "dotenv/config";
+import dotenv from "dotenv";
 import express from "express";
 import mongoose from "mongoose";
+import path from "path";
+import { fileURLToPath } from "url";
+import fs from "fs";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env file only if it exists (on hosting, env vars come from Application Manager)
+const envPath = path.join(__dirname, ".env");
+if (fs.existsSync(envPath)) {
+  dotenv.config({ path: envPath });
+}
+
 import userRoutes from "./routes/user.js";
 //import bodyParser from "express";
 import ProductRouter from "./routes/product.js";
@@ -23,10 +36,7 @@ app.use(
 );
 
 app.use(express.json({ limit: "50mb" }));
-app.use("/uploads", express.static("uploads"));
-app.get("/", (req, res) => {
-  res.send("Welcome to the Gift Shop API !!!!!");
-});
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Use the user routes
 app.use("/api/users", userRoutes);
@@ -52,23 +62,37 @@ app.use("/api/admin", adminRouter);
 //checkout OTP router
 app.use("/api/checkout-otp", checkoutOtpRoutes);
 
+// ─── Serve React Frontend (production) ───
+const clientBuildPath = path.join(__dirname, "..", "client", "dist");
+app.use(express.static(clientBuildPath));
+
+// All non-API routes → React SPA
+app.get("/{*splat}", (req, res) => {
+  res.sendFile(path.join(clientBuildPath, "index.html"));
+});
+
 const port = process.env.PORT || 1000;
 
-// Decode base64 password and inject into connection string
-const mongoPassword = Buffer.from(process.env.MONGO_PASSWORD_B64, "base64").toString("utf-8");
-const mongoUri = process.env.MONGO_URI.replace("<PASSWORD>", encodeURIComponent(mongoPassword));
+// Build MongoDB connection string
+let mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI || process.env.DATABASE_URL;
+if (!mongoUri) {
+  console.error("ERROR: No MongoDB URI found. Set MONGO_URI in environment variables.");
+  console.error("Available env keys:", Object.keys(process.env).filter(k => k.includes("MONGO") || k.includes("DB")).join(", "));
+  process.exit(1);
+}
+if (process.env.MONGO_PASSWORD_B64 && mongoUri.includes("<PASSWORD>")) {
+  const mongoPassword = Buffer.from(process.env.MONGO_PASSWORD_B64, "base64").toString("utf-8");
+  mongoUri = mongoUri.replace("<PASSWORD>", encodeURIComponent(mongoPassword));
+}
 
 mongoose
-   .connect(mongoUri, {
-     minPoolSize: 2,                  // Keep only 2 connections warm during low traffic
-     maxPoolSize: 50,                 // Scale up to 50 per replica member under load (~150 total)
-     maxIdleTimeMS: 30 * 60 * 1000,  // Close idle connections after 30 minutes
-     serverSelectionTimeoutMS: 5000,
-     socketTimeoutMS: 45000,
-   })
- const port = process.env.PORT || 1000;
-mongoose
-  .connect(process.env.MONGO_URI)
+  .connect(mongoUri, {
+    minPoolSize: 2,
+    maxPoolSize: 50,
+    maxIdleTimeMS: 30 * 60 * 1000,
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+  })
   .then(() => {
     console.log("Connected to MongoDB");
     app.listen(port, () => {

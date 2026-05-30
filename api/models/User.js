@@ -12,11 +12,18 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: true,
+    required: false,
   },
   isAdmin: {
     type: Boolean,
     default: false,
+  },
+    isGuest: {
+    type: Boolean,
+    default: false,   // 
+  },
+   phone: {
+    type: String,
   },
   createdAt: {
     type: Date,

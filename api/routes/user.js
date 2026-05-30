@@ -7,10 +7,12 @@ import {
   guestCheckout,
   updateName,
 } from "../controllers/user.js";
+import { sendOtp } from "../controllers/authController.js";
 import { Authenticated } from "../middlewares/auth.js";
 
 const router = express.Router();
-
+// Route to send OTP for registration
+router.post("/send-otp", sendOtp);
 // Import the register function from the user controller
 router.post("/register", register);
 

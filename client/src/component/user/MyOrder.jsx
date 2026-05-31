@@ -174,8 +174,7 @@ function MyOrders() {
                       </p>
                     </div>
 
-                    {order.orderStatus !== "Cancelled" &&
-                      order.orderStatus !== "Delivered" && (
+                    {order.orderStatus === "Placed" && (
                         <button
                           onClick={async () => {
                             const confirmCancel = window.confirm("Cancel this order?");
@@ -191,6 +190,34 @@ function MyOrders() {
                         </button>
                       )}
                   </div>
+
+                  {/* Tracking ID */}
+                  {order.trackingId && (
+                    <div className="mt-2 px-3 py-2 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+                      <p className="text-xs text-purple-300">
+                        Tracking ID: <span className="font-mono font-semibold text-purple-200">{order.trackingId}</span>
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Status Timeline */}
+                  {order.statusHistory && order.statusHistory.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-gray-700">
+                      <p className="text-xs font-semibold text-gray-400 mb-2">Status Timeline</p>
+                      <div className="space-y-1">
+                        {order.statusHistory.map((entry, idx) => (
+                          <div key={idx} className="flex items-center gap-2 text-xs">
+                            <span className={`w-2 h-2 rounded-full ${statusColor[entry.status]?.includes("green") ? "bg-green-400" : statusColor[entry.status]?.includes("blue") ? "bg-blue-400" : statusColor[entry.status]?.includes("yellow") ? "bg-yellow-400" : statusColor[entry.status]?.includes("purple") ? "bg-purple-400" : "bg-red-400"}`}></span>
+                            <span className="text-gray-300">{entry.status}</span>
+                            <span className="text-gray-500 ml-auto">
+                              {new Date(entry.timestamp).toLocaleDateString("en-IN", { day: "numeric", month: "short" })},{" "}
+                              {new Date(entry.timestamp).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

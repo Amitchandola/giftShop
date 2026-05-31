@@ -32,8 +32,7 @@ export const toggleWishlist = async (req, res) => {
       return res.json({ success: true, message: "Added to wishlist", wishlisted: true });
     }
   } catch (error) {
-    console.error("Wishlist toggle error:", error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Something went wrong" });
   }
 };
 
@@ -49,6 +48,6 @@ export const getWishlist = async (req, res) => {
 
     res.json({ success: true, products: wishlist.products });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Something went wrong" });
   }
 };

@@ -81,6 +81,7 @@ export const placeOrder = async (req, res) => {
       paymentScreenshot: isCOD ? "" : (req.file?.filename || ""),
       paymentStatus: isCOD ? "Pending" : (transactionId ? "Paid" : "Pending Verification"),
       orderStatus: "Placed",
+      statusHistory: [{ status: "Placed", timestamp: new Date() }],
     });
 
     // ✅ Reduce stock
@@ -90,7 +91,7 @@ export const placeOrder = async (req, res) => {
         {
           $inc: { qty: -item.qty },
         },
-        { new: true },
+        { returnDocument: "after" },
       );
     }
 
@@ -131,7 +132,7 @@ export const placeOrder = async (req, res) => {
       order: newOrder,
     });
   } catch (error) {
-    console.log(error);
+    console.error("Order error:", error.name || "Unknown");
 
     res.status(500).json({
       success: false,
@@ -161,6 +162,14 @@ export const cancelOrder = async (req, res) => {
       });
     }
 
+    // Only allow cancel when order is still in Placed status
+    if (order.orderStatus !== "Placed") {
+      return res.json({
+        success: false,
+        message: "Order can only be cancelled when in Placed status",
+      });
+    }
+
     // Restore stock
     for (const item of order.items) {
       await Products.findByIdAndUpdate(item.productId, {
@@ -169,6 +178,7 @@ export const cancelOrder = async (req, res) => {
     }
 
     order.orderStatus = "Cancelled";
+    order.statusHistory.push({ status: "Cancelled", timestamp: new Date() });
     await order.save();
 
     res.json({
@@ -176,7 +186,7 @@ export const cancelOrder = async (req, res) => {
       message: "Order cancelled successfully",
     });
   } catch (error) {
-    console.log(error);
+    console.error("Order error:", error.name || "Unknown");
 
     res.status(500).json({
       success: false,
@@ -198,7 +208,7 @@ export const getMyOrders = async (req, res) => {
       orders,
     });
   } catch (error) {
-    console.log(error);
+    console.error("Order error:", error.name || "Unknown");
 
     res.status(500).json({
       success: false,

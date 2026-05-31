@@ -63,7 +63,9 @@ app.use("/api/admin", adminRouter);
 app.use("/api/checkout-otp", checkoutOtpRoutes);
 
 // ─── Serve React Frontend (production) ───
-const clientBuildPath = path.join(__dirname, "..", "client", "dist");
+const clientDistPath = path.join(__dirname, "..", "client", "dist");
+const publicPath = path.join(__dirname, "public");
+const clientBuildPath = fs.existsSync(clientDistPath) ? clientDistPath : publicPath;
 app.use(express.static(clientBuildPath));
 
 // All non-API routes → React SPA
@@ -77,7 +79,6 @@ const port = process.env.PORT || 1000;
 let mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI || process.env.DATABASE_URL;
 if (!mongoUri) {
   console.error("ERROR: No MongoDB URI found. Set MONGO_URI in environment variables.");
-  console.error("Available env keys:", Object.keys(process.env).filter(k => k.includes("MONGO") || k.includes("DB")).join(", "));
   process.exit(1);
 }
 if (process.env.MONGO_PASSWORD_B64 && mongoUri.includes("<PASSWORD>")) {
@@ -100,5 +101,6 @@ mongoose
     });
   })
   .catch((error) => {
-    console.error("Error connecting to MongoDB:", error);
+    console.error("Error connecting to MongoDB:", error.name || "Connection failed");
+    process.exit(1);
   });

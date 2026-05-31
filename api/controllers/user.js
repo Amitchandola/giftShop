@@ -1,7 +1,7 @@
 import User from "../models/User.js";
 import Otp from "../models/Otp.js";
 import bcrypt from "bcryptjs";
-
+import nodemailer from "nodemailer";
 import jwt from "jsonwebtoken";
 
 //register function
@@ -64,7 +64,7 @@ export const register = async (req, res) => {
       email: emailNormalized,
       password: hashpass,
     });
-    console.log("User created:", user);
+    console.log("User created:", user.email);
 
     // Delete OTP after successful registration
     await Otp.deleteMany({ email: emailNormalized });
@@ -81,8 +81,8 @@ export const register = async (req, res) => {
       token,
     });
   } catch (error) {
-    console.error("Error in register:", error);
-    res.status(400).json({ message: error.message });
+    console.error("Registration error:", error.name || "Unknown");
+    res.status(400).json({ success: false, message: "Something went wrong" });
   }
 };
 
@@ -92,10 +92,8 @@ export const login = async (req, res) => {
 
   try {
     const emailNormalized = email.trim().toLowerCase();
-    console.log("Login attempt:", emailNormalized);
 
     const user = await User.findOne({ email: emailNormalized });
-    console.log("User found:", user ? user.email : "NOT FOUND");
 
     if (!user)
       return res.status(404).json({
@@ -124,7 +122,7 @@ export const login = async (req, res) => {
       success: true,
     });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ success: false, message: "Something went wrong" });
   }
 };
 
@@ -135,7 +133,7 @@ export const users = async (req, res) => {
     const users = await User.find().sort({ createdAt: -1 });
     res.json(users);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ success: false, message: "Something went wrong" });
   }
 };
 
@@ -156,7 +154,6 @@ export const profile = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Failed to get profile",
-      error: error.message,
     });
   }
 };
@@ -173,7 +170,7 @@ export const updateName = async (req, res) => {
     const user = await User.findByIdAndUpdate(
       req.user,
       { name: name.trim() },
-      { new: true },
+      { returnDocument: "after" },
     ).select("-password");
     res.json({ success: true, message: "Name updated", user });
   } catch (error) {
@@ -219,7 +216,119 @@ export const guestCheckout = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Something went wrong",
     });
+  }
+};
+
+// Forgot Password — send reset link via email
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required" });
+    }
+
+    const emailNormalized = email.trim().toLowerCase();
+    const user = await User.findOne({ email: emailNormalized });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "No account found with this email" });
+    }
+
+    // Generate a reset token valid for 15 minutes
+    const resetToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "15m" });
+
+    // Build reset URL
+    const baseUrl = process.env.CLIENT_URL || `${req.protocol}://${req.get("host")}`;
+    const resetLink = `${baseUrl}/reset-password?token=${resetToken}`;
+
+    // Send email
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: emailNormalized,
+      subject: "Password Reset - House of Return Gift",
+      html: `
+        <div style="font-family:sans-serif;padding:20px;max-width:500px;margin:auto">
+          <h2 style="color:#f59e0b">Password Reset</h2>
+          <p>Hi ${user.name},</p>
+          <p>You requested to reset your password. Click the button below:</p>
+          <a href="${resetLink}" style="display:inline-block;background:#f59e0b;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;margin:16px 0">Reset Password</a>
+          <p style="color:#666;font-size:12px">This link expires in 15 minutes. If you didn't request this, ignore this email.</p>
+        </div>
+      `,
+    });
+
+    res.json({ success: true, message: "Password reset link sent to your email" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to send reset email" });
+  }
+};
+
+// Reset Password — verify token and set new password
+export const resetPassword = async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    if (!token || !password) {
+      return res.status(400).json({ success: false, message: "Token and new password are required" });
+    }
+    if (password.length < 5) {
+      return res.status(400).json({ success: false, message: "Password must be at least 5 characters" });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    res.json({ success: true, message: "Password reset successfully" });
+  } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      return res.status(400).json({ success: false, message: "Reset link has expired. Please request a new one." });
+    }
+    res.status(400).json({ success: false, message: "Invalid or expired reset link" });
+  }
+};
+
+// Change Password (logged in user)
+export const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ success: false, message: "Current and new password are required" });
+    }
+    if (newPassword.length < 5) {
+      return res.status(400).json({ success: false, message: "New password must be at least 5 characters" });
+    }
+
+    const user = await User.findById(req.user);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: "Current password is incorrect" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    res.json({ success: true, message: "Password changed successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to change password" });
   }
 };

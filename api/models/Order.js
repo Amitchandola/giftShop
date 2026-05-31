@@ -118,6 +118,28 @@ const orderSchema = new mongoose.Schema({
     default: "Placed",
   },
 
+  trackingId: {
+    type: String,
+    default: "",
+  },
+
+  statusHistory: [
+    {
+      status: {
+        type: String,
+        enum: ["Placed", "Packed", "Shipped", "Delivered", "Cancelled"],
+      },
+      timestamp: {
+        type: Date,
+        default: Date.now,
+      },
+      trackingId: {
+        type: String,
+        default: "",
+      },
+    },
+  ],
+
   createdAt: {
     type: Date,
     default: Date.now,

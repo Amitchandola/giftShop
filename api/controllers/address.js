@@ -29,10 +29,9 @@ export const addAddress = async (req, res) => {
       userAddress,
     });
   } catch (error) {
-    console.error("ERROR:", error);
     return res.status(500).json({
+      success: false,
       message: "Something went wrong",
-      error: error.message,
     });
   }
 };
@@ -56,6 +55,6 @@ export const deleteAddress = async (req, res) => {
     }
     res.json({ success: true, message: "Address deleted" });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Something went wrong" });
   }
 };

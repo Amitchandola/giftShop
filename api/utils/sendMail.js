@@ -88,7 +88,7 @@ const sendOrderMails = async (orderDetails) => {
     console.log("Owner + Customer mail sent successfully");
     return true;
   } catch (error) {
-    console.log("Mail Error:", error.message);
+    console.error("Mail sending failed");
     return false;
   }
 };

@@ -71,7 +71,7 @@ export const addProduct = async (req, res) => {
 
     res.json({ message: "Product added", success: true, product });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ success: false, message: "Something went wrong" });
   }
 };
 
@@ -87,7 +87,7 @@ export const getProducts = async (req, res) => {
       products,
     });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ success: false, message: "Something went wrong" });
   }
 };
 
@@ -138,7 +138,7 @@ export const updateProductById = async (req, res) => {
     }
 
     const product = await Products.findByIdAndUpdate(id, updateData, {
-      new: true,
+      returnDocument: "after",
       runValidators: true,
     });
 
@@ -155,12 +155,12 @@ export const updateProductById = async (req, res) => {
       product,
     });
   } catch (error) {
-    console.log(error);
+    console.error("Product update error:", error.name || "Unknown");
 
     res.status(500).json({
       success: false,
       message: "Server Error",
-      error: error.message,
+      error: "Server error",
     });
   }
 };

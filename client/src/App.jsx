@@ -8,6 +8,8 @@ import Navbar from "./component/Navbar";
 import SearchProduct from "./component/product/SearchProduct";
 import Register from "./component/user/Register";
 import Login from "./component/user/Login";
+import ForgotPassword from "./component/user/ForgotPassword";
+import ResetPassword from "./component/user/ResetPassword";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Profile from "./component/user/Profile";
@@ -32,6 +34,8 @@ function App() {
         <Route path="/product/search/:term" element={<SearchProduct />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/shipping" element={<Address />} />
@@ -44,7 +48,7 @@ function App() {
 
       {/* WhatsApp Floating Button - Bottom Left */}
       <a
-        href="https://wa.me/919917078468?text=Hi"
+        href="https://wa.me/919917078468?text=Hi%20there%2C%20I%20wanted%20to%20know%20more%20about%20the%20product."
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-6 right-6 z-50 bg-green-500 hover:bg-green-600 text-white rounded-full p-4 shadow-lg transition-all duration-300 hover:scale-110"

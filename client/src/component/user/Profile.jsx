@@ -1,8 +1,9 @@
 import React, { useContext, useEffect, useState } from "react";
 import AppContext from "../../context/AppContext";
-import { User, Package, Clock, ChevronDown, ChevronUp, MapPin, Trash2, Plus, Pencil, Check, X } from "lucide-react";
+import { User, Package, Clock, ChevronDown, ChevronUp, MapPin, Trash2, Plus, Pencil, Check, X, Lock, Eye, EyeOff } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
+import axios from "axios";
 
 function Profile() {
   const {
@@ -232,6 +233,13 @@ function Profile() {
                           {order.paymentStatus}
                         </span>
                       </div>
+                      {order.trackingId && (
+                        <div className="mt-2 px-3 py-2 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+                          <p className="text-xs text-purple-300">
+                            Tracking ID: <span className="font-mono font-semibold text-purple-200">{order.trackingId}</span>
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -311,7 +319,105 @@ function Profile() {
             </form>
           )}
         </div>
+
+        {/* ─── Change Password ─── */}
+        <ChangePasswordSection />
       </div>
+    </div>
+  );
+}
+
+function ChangePasswordSection() {
+  const { url, token } = useContext(AppContext);
+  const [showForm, setShowForm] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.currentPassword || !form.newPassword || !form.confirmPassword) {
+      toast.error("Please fill all fields");
+      return;
+    }
+    if (form.newPassword.length < 5) {
+      toast.error("New password must be at least 5 characters");
+      return;
+    }
+    if (form.newPassword !== form.confirmPassword) {
+      toast.error("New passwords do not match");
+      return;
+    }
+    try {
+      setLoading(true);
+      const res = await axios.put(
+        `${url}/users/change-password`,
+        { currentPassword: form.currentPassword, newPassword: form.newPassword },
+        { headers: { Auth: token || localStorage.getItem("token") }, withCredentials: true }
+      );
+      if (res.data.success) {
+        toast.success(res.data.message);
+        setForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+        setShowForm(false);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to change password");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-gray-800 shadow-xl rounded-2xl p-6 border border-amber-500/10">
+      <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-4">
+        <Lock size={20} className="text-amber-400" /> Change Password
+      </h3>
+
+      {!showForm ? (
+        <button
+          onClick={() => setShowForm(true)}
+          className="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg text-sm hover:bg-gray-600 transition border border-gray-600"
+        >
+          Change Password
+        </button>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-3 max-w-sm">
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Current Password"
+              value={form.currentPassword}
+              onChange={(e) => setForm({ ...form, currentPassword: e.target.value })}
+              className="w-full px-4 py-2 pr-10 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400/50 text-sm"
+            />
+            <span onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-2.5 cursor-pointer text-gray-500">
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </span>
+          </div>
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="New Password (min 5 chars)"
+            value={form.newPassword}
+            onChange={(e) => setForm({ ...form, newPassword: e.target.value })}
+            className="w-full px-4 py-2 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400/50 text-sm"
+          />
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="Confirm New Password"
+            value={form.confirmPassword}
+            onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+            className="w-full px-4 py-2 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400/50 text-sm"
+          />
+          <div className="flex gap-2">
+            <button type="submit" disabled={loading} className="flex-1 py-2 bg-amber-500 text-black rounded-lg text-sm hover:bg-amber-600 transition font-semibold">
+              {loading ? "Updating..." : "Update Password"}
+            </button>
+            <button type="button" onClick={() => { setShowForm(false); setForm({ currentPassword: "", newPassword: "", confirmPassword: "" }); }} className="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg text-sm hover:bg-gray-600 transition">
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
     </div>
   );
 }

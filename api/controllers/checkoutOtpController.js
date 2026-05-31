@@ -63,7 +63,6 @@ export const sendCheckoutOtp = async (req, res) => {
 
   
     const emailNormalized = email?.trim().toLowerCase();
-    console.log("📩 SEND OTP FOR:", emailNormalized);
 
     const existingUser = await User.findOne({ email: emailNormalized });
 
@@ -85,7 +84,7 @@ export const sendCheckoutOtp = async (req, res) => {
       expiresAt: new Date(Date.now() + 5 * 60 * 1000),
     });
 
-    console.log("💾 OTP SAVED:", savedOtp);
+    // OTP saved successfully
 
     await sendOtpMail(emailNormalized, otp);
 
@@ -95,7 +94,7 @@ export const sendCheckoutOtp = async (req, res) => {
     });
 
   } catch (error) {
-    console.log("SEND OTP ERROR:", error);
+    console.error("Send OTP failed:", error.name || "Unknown error");
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };
@@ -113,9 +112,6 @@ export const verifyCheckoutOtp = async (req, res) => {
     }
 
    const emailNormalized = email.trim().toLowerCase().trim();
-console.log("EMAIL FROM FRONTEND:", email);
-console.log("NORMALIZED EMAIL:", emailNormalized);
-console.log("OTP ENTERED:", otp);
 const otpRecord = await Otp.findOne({ email: emailNormalized });
 
 if (!otpRecord) {
@@ -142,7 +138,7 @@ await Otp.deleteOne({ email: emailNormalized });
     });
 
   } catch (error) {
-    console.log("VERIFY ERROR:", error);
+    console.error("OTP verify failed:", error.name || "Unknown error");
     return res.status(500).json({
       success: false,
       message: "Server error",

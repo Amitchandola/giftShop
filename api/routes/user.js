@@ -6,6 +6,9 @@ import {
   users,
   guestCheckout,
   updateName,
+  forgotPassword,
+  resetPassword,
+  changePassword,
 } from "../controllers/user.js";
 import { sendOtp } from "../controllers/authController.js";
 import { Authenticated } from "../middlewares/auth.js";
@@ -27,6 +30,15 @@ router.get("/profile", Authenticated, profile);
 
 //update name
 router.put("/update-name", Authenticated, updateName);
+
+// Forgot password
+router.post("/forgot-password", forgotPassword);
+
+// Reset password (from email link)
+router.post("/reset-password", resetPassword);
+
+// Change password (logged in)
+router.put("/change-password", Authenticated, changePassword);
 
 // Guest checkout — find or create user
 router.post("/guest-checkout", guestCheckout);

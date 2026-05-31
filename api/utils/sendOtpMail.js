@@ -13,7 +13,7 @@ const sendOtpMail = async (email, otp) => {
 
     transporter.verify(function (error, success) {
       if (error) {
-        console.log("VERIFY ERROR:", error);
+        console.error("Mail transporter verification failed");
       } else {
         console.log("Server is ready to send mail");
       }
@@ -43,7 +43,7 @@ const sendOtpMail = async (email, otp) => {
 
     return true;
   } catch (error) {
-    console.log("Mail Error:", error);
+    console.error("OTP mail sending failed");
 
     return false;
   }

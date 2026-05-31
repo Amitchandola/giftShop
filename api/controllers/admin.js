@@ -36,7 +36,7 @@ export const getDashboardStats = async (req, res) => {
       lowStockProducts,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Something went wrong" });
   }
 };
 
@@ -71,7 +71,7 @@ export const addProduct = async (req, res) => {
       product,
     });
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    res.status(400).json({ success: false, message: "Invalid request" });
   }
 };
 
@@ -109,7 +109,7 @@ export const updateProduct = async (req, res) => {
     }
 
     const product = await Products.findByIdAndUpdate(id, updateData, {
-      new: true,
+      returnDocument: "after",
       runValidators: true,
     });
 
@@ -125,7 +125,7 @@ export const updateProduct = async (req, res) => {
       product,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Something went wrong" });
   }
 };
 
@@ -143,7 +143,7 @@ export const deleteProduct = async (req, res) => {
 
     res.json({ success: true, message: "Product deleted successfully" });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Something went wrong" });
   }
 };
 
@@ -179,7 +179,7 @@ export const getAllProducts = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Something went wrong" });
   }
 };
 
@@ -194,7 +194,7 @@ export const getProduct = async (req, res) => {
     }
     res.json({ success: true, product });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Something went wrong" });
   }
 };
 
@@ -213,7 +213,7 @@ export const updateStock = async (req, res) => {
     const product = await Products.findByIdAndUpdate(
       id,
       { qty },
-      { new: true, runValidators: true }
+      { returnDocument: "after", runValidators: true }
     );
 
     if (!product) {
@@ -228,7 +228,7 @@ export const updateStock = async (req, res) => {
       product,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Something went wrong" });
   }
 };
 
@@ -241,7 +241,7 @@ export const getAllOrders = async (req, res) => {
 
     res.json({ success: true, orders });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Something went wrong" });
   }
 };
 
@@ -249,27 +249,59 @@ export const getAllOrders = async (req, res) => {
 export const updateOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, trackingId } = req.body;
 
-    const order = await Order.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true }
-    );
-
-    if (!order) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Order not found" });
+    const validStatuses = ["Placed", "Packed", "Shipped", "Delivered", "Cancelled"];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ success: false, message: "Invalid status" });
     }
+
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    // If marking as Shipped, tracking ID is required
+    if (status === "Shipped" && !trackingId) {
+      return res.status(400).json({ success: false, message: "Tracking ID is required for Shipped status" });
+    }
+
+    // If cancelled, restore stock
+    if (status === "Cancelled") {
+      for (const item of order.items) {
+        await Products.findByIdAndUpdate(item.productId, {
+          $inc: { qty: item.qty },
+        });
+      }
+    }
+
+    // Use atomic $set and $push to avoid Mongoose change-tracking issues
+    const updateOps = {
+      $set: { orderStatus: status },
+      $push: {
+        statusHistory: {
+          status,
+          timestamp: new Date(),
+          trackingId: status === "Shipped" ? (trackingId || "") : "",
+        },
+      },
+    };
+
+    // Store tracking ID when shipped
+    if (status === "Shipped" && trackingId) {
+      updateOps.$set.trackingId = trackingId;
+    }
+
+    const updatedOrder = await Order.findByIdAndUpdate(id, updateOps, { returnDocument: "after" })
+      .populate("userId", "name email");
 
     res.json({
       success: true,
-      message: "Order status updated",
-      order,
+      message: `Order status updated to ${status}`,
+      order: updatedOrder,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Something went wrong" });
   }
 };
 
@@ -281,7 +313,7 @@ export const getAllUsers = async (req, res) => {
       .sort({ createdAt: -1 });
     res.json({ success: true, users });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Something went wrong" });
   }
 };
 
@@ -315,7 +347,7 @@ export const toggleAdminRole = async (req, res) => {
       user: { _id: user._id, name: user.name, email: user.email, isAdmin: user.isAdmin },
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Something went wrong" });
   }
 };
 
@@ -344,6 +376,6 @@ export const makeAdminByEmail = async (req, res) => {
       message: `${targetUser.name} (${targetUser.email}) is now an admin`,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Something went wrong" });
   }
 };

@@ -3,6 +3,7 @@ node_modules
 
 # Environment variables
 .env
+.env.*
 
 # Logs
 logs
@@ -16,3 +17,17 @@ Thumbs.db
 # Uploads (user content)
 api/uploads/*
 !api/uploads/.gitkeep
+
+# Build output
+client/dist
+api/public/assets
+api/public/index.html
+api/public/banner.jfif
+api/public/favicon.svg
+api/public/categories
+
+# Archives
+*.zip
+
+# Test/debug scripts
+api/check-*.mjs

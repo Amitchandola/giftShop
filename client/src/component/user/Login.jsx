@@ -118,8 +118,14 @@ function Login() {
           >
             Register
           </span>
-        </p>
-      </div>
+        </p>        <p className="text-center text-sm text-gray-400 mt-2">
+          <span
+            onClick={() => navigate("/forgot-password")}
+            className="underline cursor-pointer hover:text-amber-400 text-amber-400/70"
+          >
+            Forgot Password?
+          </span>
+        </p>      </div>
     </div>
   );
 }

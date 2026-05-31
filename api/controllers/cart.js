@@ -114,7 +114,7 @@ export const addToCart = async (req, res) => {
       cart: { ...cart.toObject(), items: enrichedItems },
     });
   } catch (error) {
-    console.error("addToCart error:", error.message);
+    console.error("addToCart error:", error.name || "Unknown");
     res.status(500).json({ success: false, message: "Failed to add to cart" });
   }
 };
@@ -145,7 +145,7 @@ export const getUserCart = async (req, res) => {
 
     res.status(200).json({ cart: { ...cart.toObject(), items: enrichedItems } });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ success: false, message: "Something went wrong" });
   }
 };
 //remove from cart
@@ -225,6 +225,6 @@ export const decreaseCartItemQty = async (req, res) => {
       cart,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: "Something went wrong" });
   }
 };

@@ -197,11 +197,10 @@ const result = await guestCheckout(
   const upiId = "chandolaamit.12-1@okaxis";
   const payeeName = "Amit Chandola";
   const upiAmount = parseFloat(price).toFixed(2);
-  const message = `Order Payment Rs ${upiAmount}`;
-  // QR code includes amount (works reliably with scanners)
-  const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${upiAmount}&cu=INR&tn=${encodeURIComponent(message)}`;
+  // QR code includes amount only — no message to avoid bank rejection
+  const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${upiAmount}&cu=INR`;
   // Deep link — minimal params to avoid bank rejection on mobile
-  const upiDeepLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&cu=INR`;
+  const upiDeepLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${upiAmount}&cu=INR`;
 
   // Guest form submit
  const handleGuestSubmit = (e) => {

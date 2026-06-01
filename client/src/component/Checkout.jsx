@@ -559,6 +559,14 @@ const result = await guestCheckout(
                           <li>Come back & enter Transaction ID below</li>
                         </ol>
                       </div>
+
+                      {/* Open UPI App button */}
+                      <a
+                        href={upiDeepLink}
+                        className="mt-3 w-full inline-block text-center px-4 py-2 bg-amber-500 text-black rounded-lg text-sm hover:bg-amber-600 transition font-semibold"
+                      >
+                        Open UPI App
+                      </a>
                     </div>
 
                     {/* Transaction Details */}

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from "react";
 import AppContext from "../context/AppContext";
-import { Plus, Minus, ShoppingCart, CreditCard, MapPin, Trash2, CheckCircle, XCircle, Banknote, QrCode } from "lucide-react";
+import { Plus, Minus, ShoppingCart, CreditCard, MapPin, Trash2, CheckCircle, XCircle, Banknote, QrCode, Copy, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { QRCodeCanvas } from "qrcode.react";
 import { toast } from "react-toastify";
@@ -194,8 +194,8 @@ const result = await guestCheckout(
   }, [cart]);
 
   // UPI Payment
-  const upiId = "poojarr9920-7@okicici";
-  const payeeName = "Pooja Bahuguna";
+  const upiId = "chandolaamit.12-1@okaxis";
+  const payeeName = "Amit Chandola";
   const upiAmount = parseFloat(price).toFixed(2);
   const message = `Order Payment Rs ${upiAmount}`;
   // QR code includes amount (works reliably with scanners)
@@ -503,18 +503,62 @@ const result = await guestCheckout(
               {paymentMode === "upi" && (
                 <div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* QR Code */}
+                    {/* QR Code + UPI Details */}
                     <div className="flex flex-col items-center">
-                      <QRCodeCanvas value={upiLink} size={180} />
-                      <p className="text-sm text-gray-400 mt-3">Scan to pay ₹{price}</p>
-                      <p className="text-xs text-gray-500 mt-1">UPI ID: {upiId}</p>
-                      <a
-                        href={upiDeepLink}
-                        className="mt-3 px-4 py-2 bg-amber-500 text-black rounded-lg text-sm hover:bg-amber-600 transition font-semibold"
-                      >
-                        Open UPI App
-                      </a>
-                      <p className="text-xs text-amber-400/70 mt-1 text-center">Enter ₹{price} manually in UPI app</p>
+                      {/* QR for desktop */}
+                      <div className="hidden md:block">
+                        <QRCodeCanvas value={upiLink} size={180} />
+                        <p className="text-sm text-gray-400 mt-3 text-center">Scan to pay ₹{price}</p>
+                      </div>
+
+                      {/* Mobile: show QR smaller + copy options */}
+                      <div className="md:hidden w-full">
+                        <div className="flex justify-center mb-3">
+                          <QRCodeCanvas value={upiLink} size={140} />
+                        </div>
+                        <p className="text-sm text-gray-400 text-center mb-3">Scan QR from another device, or pay manually:</p>
+                      </div>
+
+                      {/* UPI ID copy section (visible on all) */}
+                      <div className="w-full bg-gray-700/50 rounded-lg p-3 mt-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs text-gray-400">UPI ID</p>
+                            <p className="text-sm text-white font-mono">{upiId}</p>
+                          </div>
+                          <button
+                            onClick={() => { navigator.clipboard.writeText(upiId); toast.success("UPI ID copied!"); }}
+                            className="p-2 bg-gray-600 hover:bg-gray-500 rounded-lg transition"
+                            title="Copy UPI ID"
+                          >
+                            <Copy size={14} className="text-amber-400" />
+                          </button>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs text-gray-400">Amount</p>
+                            <p className="text-sm text-white font-bold">₹{price}</p>
+                          </div>
+                          <button
+                            onClick={() => { navigator.clipboard.writeText(String(price)); toast.success("Amount copied!"); }}
+                            className="p-2 bg-gray-600 hover:bg-gray-500 rounded-lg transition"
+                            title="Copy Amount"
+                          >
+                            <Copy size={14} className="text-amber-400" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Steps for mobile users */}
+                      <div className="md:hidden w-full mt-3 bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
+                        <p className="text-xs font-semibold text-amber-400 mb-1">How to pay:</p>
+                        <ol className="text-xs text-gray-300 space-y-1 list-decimal list-inside">
+                          <li>Copy UPI ID above</li>
+                          <li>Open any UPI app (GPay, PhonePe, Paytm)</li>
+                          <li>Send ₹{price} to the copied UPI ID</li>
+                          <li>Come back & enter Transaction ID below</li>
+                        </ol>
+                      </div>
                     </div>
 
                     {/* Transaction Details */}

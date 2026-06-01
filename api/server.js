@@ -64,9 +64,11 @@ app.use("/api/admin", adminRouter);
 app.use("/api/checkout-otp", checkoutOtpRoutes);
 
 // ─── Serve React Frontend (production) ───
+const rootDistPath = path.join(__dirname, "..", "dist");
 const clientDistPath = path.join(__dirname, "..", "client", "dist");
 const publicPath = path.join(__dirname, "public");
-const clientBuildPath = fs.existsSync(clientDistPath) ? clientDistPath : publicPath;
+const clientBuildPath = fs.existsSync(rootDistPath) ? rootDistPath
+  : fs.existsSync(clientDistPath) ? clientDistPath : publicPath;
 app.use(express.static(clientBuildPath));
 
 // All non-API routes → React SPA

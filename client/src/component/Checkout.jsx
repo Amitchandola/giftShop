@@ -198,7 +198,10 @@ const result = await guestCheckout(
   const payeeName = "Pooja Bahuguna";
   const upiAmount = parseFloat(price).toFixed(2);
   const message = `Order Payment Rs ${upiAmount}`;
+  // QR code includes amount (works reliably with scanners)
   const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${upiAmount}&cu=INR&tn=${encodeURIComponent(message)}`;
+  // Deep link — minimal params to avoid bank rejection on mobile
+  const upiDeepLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&cu=INR`;
 
   // Guest form submit
  const handleGuestSubmit = (e) => {
@@ -506,11 +509,12 @@ const result = await guestCheckout(
                       <p className="text-sm text-gray-400 mt-3">Scan to pay ₹{price}</p>
                       <p className="text-xs text-gray-500 mt-1">UPI ID: {upiId}</p>
                       <a
-                        href={upiLink}
+                        href={upiDeepLink}
                         className="mt-3 px-4 py-2 bg-amber-500 text-black rounded-lg text-sm hover:bg-amber-600 transition font-semibold"
                       >
                         Open UPI App
                       </a>
+                      <p className="text-xs text-amber-400/70 mt-1 text-center">Enter ₹{price} manually in UPI app</p>
                     </div>
 
                     {/* Transaction Details */}

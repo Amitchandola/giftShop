@@ -18,9 +18,6 @@ Thumbs.db
 api/uploads/*
 !api/uploads/.gitkeep
 
-# Build output
-client/dist
-
 # Archives
 *.zip
 

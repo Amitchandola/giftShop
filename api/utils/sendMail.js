@@ -53,13 +53,13 @@ const sendOrderMails = async (orderDetails) => {
     const customerMail = {
       from: process.env.EMAIL_USER,
       to: orderDetails.customerEmail,
-      subject: "✅ Order Confirmation - returnGift.com",
+      subject: "✅ Order Confirmation - House of Return Gift",
       html: `
-        <h2>Thank You for Your Order 🎉</h2>
+        <h2 style="color:#f59e0b">House of Return Gift</h2>
 
         <p>Dear ${orderDetails.userName},</p>
 
-        <p>Your order has been placed successfully.</p>
+        <p>Your order has been placed successfully. 🎉</p>
 
         <p><strong>Total Amount:</strong> ₹${orderDetails.totalPrice}</p>
 
@@ -79,6 +79,8 @@ const sendOrderMails = async (orderDetails) => {
         <br />
 
         <p>Thank you for shopping with us ❤️</p>
+        <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0" />
+        <p style="color:#666;font-size:13px">Need help? Contact us on WhatsApp: <a href="https://wa.me/919917078468" style="color:#25D366;text-decoration:none;font-weight:bold">+91 9917078468</a></p>
       `,
     };
 

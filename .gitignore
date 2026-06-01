@@ -20,11 +20,6 @@ api/uploads/*
 
 # Build output
 client/dist
-api/public/assets
-api/public/index.html
-api/public/banner.jfif
-api/public/favicon.svg
-api/public/categories
 
 # Archives
 *.zip

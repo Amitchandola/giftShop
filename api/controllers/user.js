@@ -235,14 +235,18 @@ export const forgotPassword = async (req, res) => {
       return res.status(404).json({ success: false, message: "No account found with this email" });
     }
 
-    // Generate a reset token valid for 15 minutes
-    const resetToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "15m" });
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    // Build reset URL
-    const baseUrl = process.env.CLIENT_URL || `${req.protocol}://${req.get("host")}`;
-    const resetLink = `${baseUrl}/reset-password?token=${resetToken}`;
+    // Save/update OTP in DB
+    await Otp.findOneAndUpdate(
+      { email: emailNormalized },
+      { otp, expiresAt },
+      { upsert: true, new: true }
+    );
 
-    // Send email
+    // Send OTP email
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -254,21 +258,58 @@ export const forgotPassword = async (req, res) => {
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: emailNormalized,
-      subject: "Password Reset - House of Return Gift",
+      subject: "Password Reset OTP - House of Return Gift",
       html: `
         <div style="font-family:sans-serif;padding:20px;max-width:500px;margin:auto">
-          <h2 style="color:#f59e0b">Password Reset</h2>
+          <h2 style="color:#f59e0b">House of Return Gift</h2>
           <p>Hi ${user.name},</p>
-          <p>You requested to reset your password. Click the button below:</p>
-          <a href="${resetLink}" style="display:inline-block;background:#f59e0b;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;margin:16px 0">Reset Password</a>
-          <p style="color:#666;font-size:12px">This link expires in 15 minutes. If you didn't request this, ignore this email.</p>
+          <p>Your OTP for password reset is:</p>
+          <div style="background:#1f2937;padding:16px;border-radius:8px;text-align:center;margin:16px 0">
+            <span style="font-size:32px;font-weight:bold;color:#f59e0b;letter-spacing:8px">${otp}</span>
+          </div>
+          <p style="color:#666;font-size:12px">This OTP expires in 10 minutes. If you didn't request this, ignore this email.</p>
+          <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0" />
+          <p style="color:#666;font-size:13px">Need help? Contact us on WhatsApp: <a href="https://wa.me/919917078468" style="color:#25D366;text-decoration:none;font-weight:bold">+91 9917078468</a></p>
         </div>
       `,
     });
 
-    res.json({ success: true, message: "Password reset link sent to your email" });
+    res.json({ success: true, message: "OTP sent to your email" });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to send reset email" });
+    res.status(500).json({ success: false, message: "Failed to send OTP" });
+  }
+};
+
+// Verify forgot-password OTP
+export const verifyResetOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+      return res.status(400).json({ success: false, message: "Email and OTP are required" });
+    }
+
+    const emailNormalized = email.trim().toLowerCase();
+    const otpData = await Otp.findOne({ email: emailNormalized });
+
+    if (!otpData) {
+      return res.status(400).json({ success: false, message: "OTP not found. Please request a new one." });
+    }
+    if (otpData.expiresAt < new Date()) {
+      return res.status(400).json({ success: false, message: "OTP has expired. Please request a new one." });
+    }
+    if (otpData.otp !== otp.trim()) {
+      return res.status(400).json({ success: false, message: "Invalid OTP" });
+    }
+
+    // Generate a short-lived token for the password reset step
+    const resetToken = jwt.sign({ userId: (await User.findOne({ email: emailNormalized }))._id }, process.env.JWT_SECRET, { expiresIn: "5m" });
+
+    // Delete OTP after successful verification
+    await Otp.deleteOne({ email: emailNormalized });
+
+    res.json({ success: true, message: "OTP verified", resetToken });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Verification failed" });
   }
 };
 
@@ -296,9 +337,9 @@ export const resetPassword = async (req, res) => {
     res.json({ success: true, message: "Password reset successfully" });
   } catch (error) {
     if (error.name === "TokenExpiredError") {
-      return res.status(400).json({ success: false, message: "Reset link has expired. Please request a new one." });
+      return res.status(400).json({ success: false, message: "Session expired. Please start over." });
     }
-    res.status(400).json({ success: false, message: "Invalid or expired reset link" });
+    res.status(400).json({ success: false, message: "Invalid or expired session" });
   }
 };
 

@@ -196,8 +196,9 @@ const result = await guestCheckout(
   // UPI Payment
   const upiId = "poojarr9920-7@okicici";
   const payeeName = "Pooja Bahuguna";
-  const message = `GiftShop Order - ₹${price}`;
-  const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${price}&cu=INR&tn=${encodeURIComponent(message)}`;
+  const upiAmount = parseFloat(price).toFixed(2);
+  const message = `Order Payment Rs ${upiAmount}`;
+  const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${upiAmount}&cu=INR&tn=${encodeURIComponent(message)}`;
 
   // Guest form submit
  const handleGuestSubmit = (e) => {

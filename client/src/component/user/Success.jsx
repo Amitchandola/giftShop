@@ -32,7 +32,7 @@ function Success() {
         </p>
 
         <a
-          href="https://wa.me/919917078468?text=Hi%20there%2C%20I%20wanted%20to%20know%20more%20about%20the%20product."
+          href="https://wa.me/919917078468?text=Hello!%20I'm%20exploring%20your%20website%20and%20would%20appreciate%20some%20guidance."
           target="_blank"
           rel="noopener noreferrer"
           className="mt-3 inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-lg transition"

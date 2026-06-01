@@ -26,6 +26,7 @@ import adminRouter from "./routes/admin.js";
 import checkoutOtpRoutes from "./routes/checkoutOtpRoutes.js";
 
 const app = express();
+app.set("trust proxy", true);
 //app.use(bodyParser.json());
 app.use(
   cors({
@@ -70,7 +71,12 @@ app.use(express.static(clientBuildPath));
 
 // All non-API routes → React SPA
 app.get("/{*splat}", (req, res) => {
-  res.sendFile(path.join(clientBuildPath, "index.html"));
+  const indexPath = path.join(clientBuildPath, "index.html");
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(404).send("index.html not found. Build the client first.");
+  }
 });
 
 const port = process.env.PORT || 1000;

@@ -7,6 +7,7 @@ import {
   guestCheckout,
   updateName,
   forgotPassword,
+  verifyResetOtp,
   resetPassword,
   changePassword,
 } from "../controllers/user.js";
@@ -34,7 +35,10 @@ router.put("/update-name", Authenticated, updateName);
 // Forgot password
 router.post("/forgot-password", forgotPassword);
 
-// Reset password (from email link)
+// Verify reset OTP
+router.post("/verify-reset-otp", verifyResetOtp);
+
+// Reset password (after OTP verified)
 router.post("/reset-password", resetPassword);
 
 // Change password (logged in)

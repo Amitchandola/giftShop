@@ -194,8 +194,8 @@ const result = await guestCheckout(
   }, [cart]);
 
   // UPI Payment
-  const upiId = "chandolaamit.12-1@okaxis";
-  const payeeName = "Amit Chandola";
+  const upiId = "poojarr9920-7@okicici";
+  const payeeName = "Pooja Bahuguna";
   const upiAmount = parseFloat(price).toFixed(2);
   // QR code includes amount only — no message to avoid bank rejection
   const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${upiAmount}&cu=INR`;

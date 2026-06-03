@@ -176,10 +176,12 @@ function Register() {
               onChange={handleChange}
               className="w-full px-4 py-2 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400/50"
             />
-            <p className="text-xs text-white mt-2">
-              Please enter a valid email address. Your order confirmation
-              details will be sent to this email after your order is placed.
-            </p>
+            {form.email && (
+              <p className="text-xs text-white mt-2">
+                Please enter a valid email address. Your order confirmation
+                details will be sent to this email after your order is placed.
+              </p>
+            )}
           </div>
 
           {/* Password */}

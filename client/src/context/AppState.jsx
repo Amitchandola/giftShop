@@ -724,6 +724,60 @@ const [otpVerified, setOtpVerified] = useState(false);
   //     setLoading(false);
   //   }
   // };
+
+  // Login with a pre-obtained token (used after OTP verification at checkout)
+  const loginWithToken = async (newToken) => {
+    try {
+      setLoading(true);
+      setToken(newToken);
+      setIsAuthenticated(true);
+      localStorage.setItem("token", newToken);
+
+      // Sync guest cart to backend
+      const guestItems = JSON.parse(localStorage.getItem("guestCart") || "[]");
+      for (const item of guestItems) {
+        for (let i = 0; i < item.qty; i++) {
+          await axios.post(
+            `${url}/cart/add`,
+            {
+              productId: item.productId,
+              title: item.title,
+              price: item.price,
+              imageSrc: item.imageSrc,
+            },
+            {
+              headers: { "Content-Type": "application/json", Auth: newToken },
+              withCredentials: true,
+            }
+          );
+        }
+      }
+      localStorage.removeItem("guestCart");
+
+      // Refresh cart
+      const cartApi = await axios.get(`${url}/cart/user`, {
+        headers: { Auth: newToken },
+        withCredentials: true,
+      });
+      setCart(cartApi?.data?.cart?.items || []);
+
+      // Get profile
+      const profileApi = await axios.get(`${url}/users/profile`, {
+        headers: { Auth: newToken },
+        withCredentials: true,
+      });
+      setUser(profileApi.data.user);
+
+      return { success: true };
+    } catch (error) {
+      console.error(error);
+      toast.error("Login failed");
+      return { success: false };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const guestCheckout = async (name, email, phone) => {
   try {
     setLoading(true);
@@ -999,6 +1053,7 @@ const [otpVerified, setOtpVerified] = useState(false);
         userAddress,
         placeOrder,
         guestCheckout,
+        loginWithToken,
         cancelOrder,
         getMyOrders,
         getAddress,

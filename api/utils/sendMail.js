@@ -23,7 +23,6 @@ const sendOrderMails = async (orderDetails) => {
     <p><strong>Customer:</strong> ${orderDetails.userName}</p>
     <p><strong>Email:</strong> ${orderDetails.customerEmail}</p>
     <p><strong>Mobile Number:</strong> ${orderDetails.phoneNumber}</p>
-    <p><strong>Total Amount:</strong> ₹${orderDetails.totalPrice}</p>
     <p><strong>Address:</strong> ${orderDetails.address}</p>
 
     <p><strong>Transaction ID:</strong> ${orderDetails.transactionId}</p>
@@ -37,6 +36,11 @@ const sendOrderMails = async (orderDetails) => {
         )
         .join("")}
     </ul>
+
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:16px 0" />
+    <p><strong>Cart Value:</strong> ₹${orderDetails.cartTotal}</p>
+    <p><strong>Delivery Charges:</strong> ₹${orderDetails.deliveryCharge}${orderDetails.cartTotal >= 799 ? ' (50% off)' : ''}</p>
+    <p style="font-size:18px"><strong>Total Amount:</strong> ₹${orderDetails.totalPrice}</p>
   `,
 
       attachments: orderDetails.paymentScreenshot
@@ -61,7 +65,11 @@ const sendOrderMails = async (orderDetails) => {
 
         <p>Your order has been placed successfully. 🎉</p>
 
-        <p><strong>Total Amount:</strong> ₹${orderDetails.totalPrice}</p>
+        <table style="border-collapse:collapse;margin:16px 0;font-size:14px">
+          <tr><td style="padding:4px 12px 4px 0">Cart Value:</td><td style="font-weight:bold">₹${orderDetails.cartTotal}</td></tr>
+          <tr><td style="padding:4px 12px 4px 0">Delivery Charges:</td><td style="font-weight:bold;color:${orderDetails.cartTotal >= 799 ? '#16a34a' : '#333'}">₹${orderDetails.deliveryCharge}${orderDetails.cartTotal >= 799 ? ' (50% off)' : ''}</td></tr>
+          <tr><td style="padding:8px 12px 4px 0;border-top:1px solid #e5e7eb;font-size:16px"><strong>Total Amount:</strong></td><td style="padding-top:8px;border-top:1px solid #e5e7eb;font-size:16px;font-weight:bold;color:#f59e0b">₹${orderDetails.totalPrice}</td></tr>
+        </table>
 
         <p><strong>Delivery Address:</strong> ${orderDetails.address}</p>
         <p><strong>Transaction ID:</strong> ${orderDetails.transactionId}</p>

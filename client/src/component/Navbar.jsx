@@ -102,9 +102,14 @@ function Navbar() {
                 )}
               </div>
 
-              <button className="md:hidden p-2 rounded-lg hover:bg-white/10 text-amber-400" onClick={() => setMenuOpen(!menuOpen)}>
-                {menuOpen ? <X size={24} /> : <Menu size={24} />}
-              </button>
+              <div className="flex items-center gap-2 md:hidden">
+                {!isAuthenticated && (
+                  <Link to="/login" className="bg-amber-500 hover:bg-amber-600 text-black px-3 py-1.5 rounded-lg text-xs font-semibold transition">Log in</Link>
+                )}
+                <button className="p-2 rounded-lg hover:bg-white/10 text-amber-400" onClick={() => setMenuOpen(!menuOpen)}>
+                  {menuOpen ? <X size={24} /> : <Menu size={24} />}
+                </button>
+              </div>
             </div>
 
             <div className={`md:hidden transition-all duration-300 overflow-hidden ${menuOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"}`}>
@@ -178,9 +183,14 @@ function Navbar() {
               )}
             </div>
 
-            <button className="md:hidden p-2 rounded-lg hover:bg-white/10 text-amber-400" onClick={() => setMenuOpen(!menuOpen)}>
-              {menuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
+            <div className="flex items-center gap-2 md:hidden">
+              {!isAuthenticated && (
+                <Link to="/login" className="bg-amber-500 hover:bg-amber-600 text-black px-3 py-1.5 rounded-lg text-xs font-semibold transition">Log in</Link>
+              )}
+              <button className="p-2 rounded-lg hover:bg-white/10 text-amber-400" onClick={() => setMenuOpen(!menuOpen)}>
+                {menuOpen ? <X size={24} /> : <Menu size={24} />}
+              </button>
+            </div>
           </div>
 
           <div className={`md:hidden transition-all duration-300 overflow-hidden ${menuOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"}`}>

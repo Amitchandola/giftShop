@@ -16,10 +16,9 @@ function Checkout() {
     deleteAddress,
     placeOrder,
     isAuthenticated,
-    guestCheckout,
+    loginWithToken,
     loading,
     clearCart,
-    // setCheckoutVerifiedEmail,
   
   } = useContext(AppContext);
 
@@ -35,7 +34,6 @@ function Checkout() {
 const [otpSent, setOtpSent] = useState(false);
 const [otp, setOtp] = useState("");
 const [otpLoading, setOtpLoading] = useState(false);
-const { setOtpVerified } = useContext(AppContext);
   // Address form
   const [addressForm, setAddressForm] = useState({
     fullName: "",
@@ -69,8 +67,7 @@ const { setOtpVerified } = useContext(AppContext);
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-    email: guestForm.email.trim().toLowerCase(),
-            otp: otp.trim(), 
+          email: guestForm.email.trim().toLowerCase(),
         }),
       }
     );
@@ -92,48 +89,6 @@ const { setOtpVerified } = useContext(AppContext);
 
   const navigate = useNavigate();
 
-//   const verifyOtpAndContinue = async () => {
-//   if (!otp) {
-//     toast.error("Enter OTP");
-//     return;
-//   }
-
-//   try {
-//     const res = await fetch(
-//       `${import.meta.env.VITE_API_URL}/api/users/verify-otp`,
-//       {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify({
-//           email: guestForm.email,
-        
-          
-//         }),
-//       }
-//     );
-
-//     const data = await res.json();
-
-//     if (!data.success) {
-//       toast.error(data.message);
-//       return;
-//     }
-
-//     const result = await guestCheckout(
-//       guestForm.name,
-//       guestForm.email,
-//       guestForm.phone
-//     );
-
-//     if (result?.success) {
-//       toast.success("Guest login successful");
-//       setGuestStep("done");
-//     }
-
-//   } catch (err) {
-//     toast.error("OTP verification failed");
-//   }
-// };
 const verifyOtpAndContinue = async () => {
   if (!otp) {
     toast.error("Enter OTP");
@@ -148,26 +103,25 @@ const verifyOtpAndContinue = async () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: guestForm.email.trim().toLowerCase(),
-      otp: String(otp).trim(),
+          otp: String(otp).trim(),
+          name: guestForm.name.trim(),
+          phone: guestForm.phone.trim(),
         }),
       }
     );
 
     const data = await res.json();
 
-if (!data.success) {
-  toast.error(data.message);
-  return;
-}
+    if (!data.success) {
+      toast.error(data.message);
+      return;
+    }
 
-const result = await guestCheckout(
-  guestForm.name,
-  guestForm.email,
-  guestForm.phone
-);
+    // Login with the token returned from verify
+    const result = await loginWithToken(data.token);
 
     if (result?.success) {
-      toast.success("Guest login successful");
+      toast.success(data.message || "Login successful");
       setGuestStep("done");
     }
   } catch (err) {
@@ -193,10 +147,16 @@ const result = await guestCheckout(
     setPrice(totalPrice);
   }, [cart]);
 
+  // Delivery charges
+  const deliveryCharge = price >= 799 ? 49 : 99;
+  const totalPayable = price + deliveryCharge;
+  const amountToFreeDiscount = price >= 799 ? 0 : 799 - price;
+  const progressPercent = Math.min((price / 799) * 100, 100);
+
   // UPI Payment
-  const upiId = "poojarr9920-7@okicici";
-  const payeeName = "Pooja Bahuguna";
-  const upiAmount = parseFloat(price).toFixed(2);
+  const upiId = "paytm.s28sj2p@pty";
+  const payeeName = "House of Return Gift";
+  const upiAmount = parseFloat(totalPayable).toFixed(2);
   // QR code includes amount only — no message to avoid bank rejection
   const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${upiAmount}&cu=INR`;
   // Deep link — minimal params to avoid bank rejection on mobile
@@ -432,10 +392,37 @@ const result = await guestCheckout(
               </div>
             ))}
 
+            {/* Delivery Discount Progress Bar */}
+            <div className="bg-gray-800 border border-gray-700 p-4 rounded-xl shadow">
+              {price >= 799 ? (
+                <div className="flex items-center gap-2">
+                  <CheckCircle size={18} className="text-green-400" />
+                  <span className="text-green-400 text-sm font-semibold">You got 50% discount on delivery!</span>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-sm text-gray-300 mb-2">
+                    Add <span className="text-amber-400 font-bold">₹{amountToFreeDiscount}</span> more to get <span className="text-amber-400 font-bold">50% discount</span> on delivery
+                  </p>
+                  <div className="w-full bg-gray-700 rounded-full h-2.5">
+                    <div
+                      className="bg-amber-500 h-2.5 rounded-full transition-all duration-500"
+                      style={{ width: `${progressPercent}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">₹{price} / ₹799</p>
+                </div>
+              )}
+            </div>
+
             {/* Order Total */}
-            <div className="bg-gray-800 border border-gray-700 p-4 rounded-xl shadow flex justify-between items-center">
-              <span className="font-semibold text-white">Total ({qty} items)</span>
-              <span className="text-2xl font-bold text-amber-400">₹{price}</span>
+            <div className="bg-gray-800 border border-gray-700 p-4 rounded-xl shadow">
+              <div className="space-y-2 text-sm text-gray-300">
+                <p className="flex justify-between"><span>Cart Value ({qty} items)</span><span>₹{price}</span></p>
+                <p className="flex justify-between"><span>Delivery Charges</span><span className={price >= 799 ? "text-green-400" : "text-white"}>₹{deliveryCharge}{price >= 799 ? " (50% off)" : ""}</span></p>
+                <hr className="my-2 border-gray-600" />
+                <p className="flex justify-between font-bold text-lg"><span>Total</span><span className="text-amber-400">₹{totalPayable}</span></p>
+              </div>
             </div>
 
             {/* Payment Mode Selector */}
@@ -490,7 +477,7 @@ const result = await guestCheckout(
                     <div>
                       <p className="text-white font-medium">Cash on Delivery</p>
                       <p className="text-gray-400 text-sm mt-1">
-                        Pay <span className="text-amber-400 font-semibold">₹{price}</span> in cash when your order is delivered.
+                        Pay <span className="text-amber-400 font-semibold">₹{totalPayable}</span> in cash when your order is delivered.
                         Please keep the exact amount ready.
                       </p>
                     </div>
@@ -507,7 +494,7 @@ const result = await guestCheckout(
                       {/* QR for desktop */}
                       <div className="hidden md:block">
                         <QRCodeCanvas value={upiLink} size={180} />
-                        <p className="text-sm text-gray-400 mt-3 text-center">Scan to pay ₹{price}</p>
+                        <p className="text-sm text-gray-400 mt-3 text-center">Scan to pay ₹{totalPayable}</p>
                       </div>
 
                       {/* Mobile: show QR smaller + copy options */}
@@ -536,10 +523,10 @@ const result = await guestCheckout(
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-xs text-gray-400">Amount</p>
-                            <p className="text-sm text-white font-bold">₹{price}</p>
+                            <p className="text-sm text-white font-bold">₹{totalPayable}</p>
                           </div>
                           <button
-                            onClick={() => { navigator.clipboard.writeText(String(price)); toast.success("Amount copied!"); }}
+                            onClick={() => { navigator.clipboard.writeText(String(totalPayable)); toast.success("Amount copied!"); }}
                             className="p-2 bg-gray-600 hover:bg-gray-500 rounded-lg transition"
                             title="Copy Amount"
                           >
@@ -554,7 +541,7 @@ const result = await guestCheckout(
                         <ol className="text-xs text-gray-300 space-y-1 list-decimal list-inside">
                           <li>Copy UPI ID above</li>
                           <li>Open any UPI app (GPay, PhonePe, Paytm)</li>
-                          <li>Send ₹{price} to the copied UPI ID</li>
+                          <li>Send ₹{totalPayable} to the copied UPI ID</li>
                           <li>Come back & enter Transaction ID below</li>
                         </ol>
                       </div>
@@ -696,10 +683,10 @@ const result = await guestCheckout(
             <div className="bg-gray-800 border border-gray-700 p-5 rounded-xl shadow">
               <h3 className="text-lg font-semibold mb-3 text-white">Order Summary</h3>
               <div className="space-y-2 text-sm text-gray-300">
-                <p className="flex justify-between"><span>Items ({qty})</span><span>₹{price}</span></p>
-                <p className="flex justify-between"><span>Delivery</span><span className="text-amber-400">Free</span></p>
+                <p className="flex justify-between"><span>Cart Value ({qty} items)</span><span>₹{price}</span></p>
+                <p className="flex justify-between"><span>Delivery Charges</span><span className={price >= 799 ? "text-green-400" : "text-white"}>₹{deliveryCharge}{price >= 799 ? " (50% off)" : ""}</span></p>
                 <hr className="my-2 border-gray-600" />
-                <p className="flex justify-between font-bold text-lg"><span>Total</span><span className="text-amber-400">₹{price}</span></p>
+                <p className="flex justify-between font-bold text-lg"><span>Total</span><span className="text-amber-400">₹{totalPayable}</span></p>
               </div>
 
               <button

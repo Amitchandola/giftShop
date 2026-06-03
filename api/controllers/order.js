@@ -47,7 +47,7 @@ export const placeOrder = async (req, res) => {
       });
     }
 
-    let totalAmount = 0;
+    let cartTotal = 0;
 
     // ✅ Check stock before placing order
     for (const item of cart.items) {
@@ -67,8 +67,12 @@ export const placeOrder = async (req, res) => {
         });
       }
 
-      totalAmount += item.price * item.qty;
+      cartTotal += item.price * item.qty;
     }
+
+    // ✅ Delivery charges: ₹49 if cart >= 799, else ₹99
+    const deliveryCharge = cartTotal >= 799 ? 49 : 99;
+    const totalAmount = cartTotal + deliveryCharge;
 
     // ✅ Save order
     const newOrder = await Order.create({
@@ -100,10 +104,11 @@ export const placeOrder = async (req, res) => {
         userName: user.name,
         customerEmail: user.email,
         phoneNumber: userAddress.phoneNumber,
+        cartTotal,
+        deliveryCharge,
         totalPrice: totalAmount,
         address: `${userAddress.address}, ${userAddress.city}, ${userAddress.state}, ${userAddress.country} - ${userAddress.pinCode}`,
         items: cart.items,
-
         transactionId: transactionId,
         paymentScreenshot: req.file?.filename || "",
       });
@@ -114,6 +119,8 @@ export const placeOrder = async (req, res) => {
         userName: user.name,
         customerEmail: user.email,
         phoneNumber: userAddress.phoneNumber,
+        cartTotal,
+        deliveryCharge,
         totalPrice: totalAmount,
         address: `${userAddress.address}, ${userAddress.city}, ${userAddress.state}, ${userAddress.country} - ${userAddress.pinCode}`,
         items: cart.items,

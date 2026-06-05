@@ -1,25 +1,26 @@
 import nodemailer from "nodemailer";
 
-const sendOtpMail = async (email, otp) => {
-  try {
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
+// Reuse transporter across calls to avoid reconnecting every time
+let transporter = null;
 
+const getTransporter = () => {
+  if (!transporter) {
+    transporter = nodemailer.createTransport({
+      service: "gmail",
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
+      pool: true,
+      maxConnections: 3,
     });
+  }
+  return transporter;
+};
 
-    transporter.verify(function (error, success) {
-      if (error) {
-        console.error("Mail transporter verification failed");
-      } else {
-        console.log("Server is ready to send mail");
-      }
-    });
-
-    await transporter.sendMail({
+const sendOtpMail = async (email, otp) => {
+  try {
+    await getTransporter().sendMail({
       from: process.env.EMAIL_USER,
 
       to: email,

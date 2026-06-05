@@ -104,7 +104,7 @@ function Navbar() {
 
               <div className="flex items-center gap-2 md:hidden">
                 {!isAuthenticated && (
-                  <Link to="/login" className="bg-amber-500 hover:bg-amber-600 text-black px-3 py-1.5 rounded-lg text-xs font-semibold transition">Log in</Link>
+                  <Link to="/login" className="bg-amber-500 hover:bg-amber-600 text-black px-3 py-1.5 rounded-lg text-xs font-semibold transition whitespace-nowrap">Log in</Link>
                 )}
                 <button className="p-2 rounded-lg hover:bg-white/10 text-amber-400" onClick={() => setMenuOpen(!menuOpen)}>
                   {menuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -122,6 +122,12 @@ function Navbar() {
                   <Link to="/wishlist" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 hover:text-amber-300"><Heart size={18} /> Wishlist</Link>
                   <Link to="/cart" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 hover:text-amber-300"><ShoppingCart size={18} /> Cart</Link>
                   <Link to="/profile" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 hover:text-amber-300"><User size={18} /> Profile</Link>
+                  {isAuthenticated && (
+                    <Link to="/my-orders" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 hover:text-amber-300"><Package size={18} /> My Orders</Link>
+                  )}
+                  {isAuthenticated && user?.isAdmin && (
+                    <Link to="/admin" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 hover:text-amber-300 text-amber-500"><Shield size={18} /> Admin</Link>
+                  )}
                   {isAuthenticated ? (
                     <button onClick={() => { logout(); navigate("/"); setMenuOpen(false); }} className="bg-amber-500 text-black px-3 py-2 rounded-lg text-center font-semibold">Log out</button>
                   ) : (
@@ -185,7 +191,7 @@ function Navbar() {
 
             <div className="flex items-center gap-2 md:hidden">
               {!isAuthenticated && (
-                <Link to="/login" className="bg-amber-500 hover:bg-amber-600 text-black px-3 py-1.5 rounded-lg text-xs font-semibold transition">Log in</Link>
+                <Link to="/login" className="bg-amber-500 hover:bg-amber-600 text-black px-3 py-1.5 rounded-lg text-xs font-semibold transition whitespace-nowrap">Log in</Link>
               )}
               <button className="p-2 rounded-lg hover:bg-white/10 text-amber-400" onClick={() => setMenuOpen(!menuOpen)}>
                 {menuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -200,6 +206,12 @@ function Navbar() {
                 <Link to="/wishlist" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 hover:text-amber-300"><Heart size={18} /> Wishlist</Link>
                 <Link to="/cart" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 hover:text-amber-300"><ShoppingCart size={18} /> Cart</Link>
                 <Link to="/profile" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 hover:text-amber-300"><User size={18} /> Profile</Link>
+                {isAuthenticated && (
+                  <Link to="/my-orders" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 hover:text-amber-300"><Package size={18} /> My Orders</Link>
+                )}
+                {isAuthenticated && user?.isAdmin && (
+                  <Link to="/admin" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 hover:text-amber-300 text-amber-500"><Shield size={18} /> Admin</Link>
+                )}
                 {isAuthenticated ? (
                   <button onClick={() => { logout(); navigate("/"); setMenuOpen(false); }} className="bg-amber-500 text-black px-3 py-2 rounded-lg text-center font-semibold">Log out</button>
                 ) : (

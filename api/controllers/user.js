@@ -28,7 +28,7 @@ export const register = async (req, res) => {
     const emailNormalized = email.trim().toLowerCase();
     //check existing user
     let user = await User.findOne({ email: emailNormalized });
-    if (user) {
+    if (user && !user.isGuest) {
       console.log("User already exists:", emailNormalized);
       return res.status(400).json({
         message: "User already exists",
@@ -59,12 +59,22 @@ export const register = async (req, res) => {
       });
     }
     const hashpass = await bcrypt.hash(password, 10);
-    user = await User.create({
-      name,
-      email: emailNormalized,
-      password: hashpass,
-    });
-    console.log("User created:", user.email);
+
+    // If guest user exists, upgrade to full user
+    if (user && user.isGuest) {
+      user.name = name;
+      user.password = hashpass;
+      user.isGuest = false;
+      await user.save();
+      console.log("Guest user upgraded:", user.email);
+    } else {
+      user = await User.create({
+        name,
+        email: emailNormalized,
+        password: hashpass,
+      });
+      console.log("User created:", user.email);
+    }
 
     // Delete OTP after successful registration
     await Otp.deleteMany({ email: emailNormalized });
@@ -100,6 +110,14 @@ export const login = async (req, res) => {
         message: "User not found",
         success: false,
       });
+
+    // Guest users don't have passwords — guide them to OTP login
+    if (!user.password) {
+      return res.status(401).json({
+        message: "This account uses OTP login. Please use 'Login via OTP' option.",
+        success: false,
+      });
+    }
 
     const validPassword = await bcrypt.compare(password, user.password);
 

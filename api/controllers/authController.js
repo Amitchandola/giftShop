@@ -36,7 +36,8 @@ export const sendOtp = async (req, res) => {
       email: emailNormalized,
     });
 
-    if (existingUser) {
+    // Block only if user exists AND is NOT a guest (guests can upgrade to full accounts)
+    if (existingUser && !existingUser.isGuest) {
       return res.status(400).json({
         success: false,
         message: "User already exists",

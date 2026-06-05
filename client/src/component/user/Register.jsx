@@ -35,14 +35,13 @@ function Register() {
   // Function to send OTP
   const sendOtp = async () => {
     try {
-      //  instant validation (frontend UX)
       if (!form.name || !form.email || !form.password) {
         setMessage("⚠️ Please fill all fields");
         return;
       }
 
       if (form.password.length < 5) {
-        setMessage(" Password must be at least 5 characters");
+        setMessage("Password must be at least 5 characters");
         return;
       } else {
         setPasswordError("");
@@ -60,7 +59,6 @@ function Register() {
           body: JSON.stringify({
             email: form.email,
             password: form.password,
-           // optional but recommended
           }),
         },
       );
@@ -93,15 +91,20 @@ function Register() {
   // REGISTER
   const submit = async (e) => {
     e.preventDefault();
-
     setMessage("");
 
+    // If OTP not sent yet, send it first
+    if (!otpSent) {
+      sendOtp();
+      return;
+    }
+
+    // OTP already sent — verify and register
     if (!form.name || !form.email || !form.password || !otp) {
       setMessage("Please fill all fields");
       return;
     }
 
-    //  PASSWORD MIN LENGTH CHECK
     if (form.password.length < 5) {
       setMessage("Password must be at least 5 characters");
       return;
@@ -214,44 +217,34 @@ function Register() {
               <p className="text-red-400 text-xs mt-1">{passwordError}</p>
             )}
           </div>
-          {/* Send OTP Button */}
-          {!otpSent && (
-            <button
-              type="button"
-              onClick={sendOtp}
-              disabled={otpLoading}
-              className="w-full py-2 rounded-lg bg-yellow-400 text-black font-semibold hover:bg-yellow-300 transition"
-            >
-              {otpLoading ? "Sending OTP..." : "Send OTP"}
-            </button>
-          )}
 
-          {/* OTP Input */}
+          {/* OTP Input — shown after form submit triggers OTP send */}
           {otpSent && (
             <div>
-              <label className="block text-sm text-white mb-1">Enter OTP</label>
+              <label className="block text-sm text-amber-400/80 mb-1">Enter OTP sent to your email</label>
 
               <input
                 type="text"
                 placeholder="Enter 6 digit OTP"
+                maxLength={6}
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg bg-white/80 focus:outline-none focus:ring-2 focus:ring-green-300"
+                className="w-full px-4 py-2 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400/50 tracking-widest text-center text-lg"
               />
             </div>
           )}
           {otpSent && (
-            <div className="mt-3 text-center">
+            <div className="text-center">
               {canResend ? (
                 <button
                   type="button"
                   onClick={sendOtp}
-                  className="text-yellow-400 underline"
+                  className="text-amber-400 underline text-sm"
                 >
                   Resend OTP
                 </button>
               ) : (
-                <p className="text-sm text-gray-300">Resend OTP in {timer}s</p>
+                <p className="text-sm text-gray-400">Resend OTP in {timer}s</p>
               )}
             </div>
           )}
@@ -259,14 +252,14 @@ function Register() {
           {/* Button */}
           <button
             type="submit"
-            disabled={loading || !otpSent}
+            disabled={loading || otpLoading}
             className={`w-full py-2 rounded-lg font-semibold transition duration-300 shadow-md ${
-              loading
+              loading || otpLoading
                 ? "bg-gray-600 cursor-not-allowed text-gray-400"
                 : "bg-amber-500 text-black hover:bg-amber-600 font-bold"
             }`}
           >
-            {loading ? "Registering..." : "Sign Up"}
+            {otpLoading ? "Sending OTP..." : loading ? "Registering..." : otpSent ? "Verify & Register" : "Register"}
           </button>
         </form>
         {/* Footer */}

@@ -3,12 +3,17 @@ import nodemailer from "nodemailer";
 
 const sendOrderMails = async (orderDetails) => {
   try {
+    const isHostinger = (process.env.EMAIL_HOST || "smtp.hostinger.com") === "smtp.hostinger.com";
+
     const transporter = nodemailer.createTransport({
-      service: "gmail",
+      host: process.env.EMAIL_HOST || "smtp.hostinger.com",
+      port: parseInt(process.env.EMAIL_PORT) || 465,
+      secure: true,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
+      ...(isHostinger && { tls: { rejectUnauthorized: false } }),
     });
 
     // ✅ Mail to Owner
@@ -88,7 +93,7 @@ const sendOrderMails = async (orderDetails) => {
 
         <p>Thank you for shopping with us ❤️</p>
         <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0" />
-        <p style="color:#666;font-size:13px">Need help? Contact us on WhatsApp: <a href="https://wa.me/919917078468" style="color:#25D366;text-decoration:none;font-weight:bold">+91 9917078468</a></p>
+        <p style="color:#666;font-size:13px">Need help? Contact us on WhatsApp: <a href="https://wa.me/919917078468" style="color:#25D366;text-decoration:none;font-weight:bold">+91 9917078468</a> or email us at <a href="mailto:support@houseofreturngift.com" style="color:#f59e0b;text-decoration:none;font-weight:bold">support@houseofreturngift.com</a></p>
       `,
     };
 

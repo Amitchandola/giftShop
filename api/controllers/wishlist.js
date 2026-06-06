@@ -40,7 +40,10 @@ export const toggleWishlist = async (req, res) => {
 export const getWishlist = async (req, res) => {
   try {
     const userId = req.user;
-    const wishlist = await Wishlist.findOne({ userId }).populate("products");
+    const wishlist = await Wishlist.findOne({ userId }).populate({
+      path: "products",
+      select: "-images",
+    });
 
     if (!wishlist) {
       return res.json({ success: true, products: [] });

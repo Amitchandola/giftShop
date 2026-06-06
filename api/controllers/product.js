@@ -17,15 +17,29 @@ export const upload = multer({
 });
 
 /**
- * Compress an image buffer using sharp:
- * - Resize to max 800px width (maintains aspect ratio)
- * - Convert to WebP at 75% quality
- * - Result: ~30-80KB per image instead of 1-3MB
+ * Compress an image for the product gallery (detail page):
+ * - Resize to max 1200px width (maintains aspect ratio)
+ * - Convert to WebP at 85% quality
+ * - Good balance of quality and size (~50-150KB per image)
  */
 async function compressImage(buffer) {
   const compressed = await sharp(buffer)
-    .resize(800, 800, { fit: "inside", withoutEnlargement: true })
-    .webp({ quality: 75 })
+    .resize(1200, 1200, { fit: "inside", withoutEnlargement: true })
+    .webp({ quality: 85 })
+    .toBuffer();
+  return `data:image/webp;base64,${compressed.toString("base64")}`;
+}
+
+/**
+ * Generate a lightweight thumbnail for product listing cards:
+ * - Resize to max 500px width
+ * - Convert to WebP at 80% quality
+ * - Result: ~20-50KB per thumbnail (fast listing load)
+ */
+async function generateThumbnail(buffer) {
+  const compressed = await sharp(buffer)
+    .resize(500, 500, { fit: "inside", withoutEnlargement: true })
+    .webp({ quality: 80 })
     .toBuffer();
   return `data:image/webp;base64,${compressed.toString("base64")}`;
 }
@@ -48,16 +62,18 @@ export const addProduct = async (req, res) => {
 
   try {
     const images = [];
+    let imageSrc = "";
 
     if (req.files && req.files.length > 0) {
+      // Generate thumbnail from first image (for listing cards)
+      imageSrc = await generateThumbnail(req.files[0].buffer);
+
+      // Compress all images at higher quality (for detail page gallery)
       for (const file of req.files) {
         const compressed = await compressImage(file.buffer);
         images.push(compressed);
       }
     }
-
-    // First image also set as imageSrc for backward compatibility
-    const imageSrc = images.length > 0 ? images[0] : "";
 
     const product = await Products.create({
       title,
@@ -79,7 +95,11 @@ export const addProduct = async (req, res) => {
 
 export const getProducts = async (req, res) => {
   try {
-    const products = await Products.find().sort({ createdAt: -1 });
+    // Exclude heavy 'images' array from listing — frontend only needs imageSrc (thumbnail)
+    const products = await Products.find()
+      .select("-images")
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.json({
       message: "Products retrieved successfully",
@@ -87,6 +107,7 @@ export const getProducts = async (req, res) => {
       products,
     });
   } catch (error) {
+    console.error("getProducts error:", error);
     res.status(400).json({ success: false, message: "Something went wrong" });
   }
 };

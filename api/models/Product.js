@@ -4,6 +4,7 @@ const productSchema = new mongoose.Schema({
   title: {
     type: String,
     required: true,
+    maxlength: [100, "Product name cannot exceed 100 characters"],
   },
   slug: {
     type: String,
@@ -12,6 +13,7 @@ const productSchema = new mongoose.Schema({
   description: {
     type: String,
     required: true,
+    maxlength: [500, "Description cannot exceed 500 characters"],
   },
   price: {
     type: Number,
@@ -60,6 +62,11 @@ productSchema.pre("save", async function () {
   }
   this.slug = slug;
 });
+
+// Index for sorting by createdAt (prevents memory limit errors with large documents)
+productSchema.index({ createdAt: -1 });
+productSchema.index({ category: 1, createdAt: -1 });
+productSchema.index({ qty: 1 });
 
 const Products = mongoose.model("Products", productSchema);
 

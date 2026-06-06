@@ -2,6 +2,7 @@ import Products from "../models/Product.js";
 import Order from "../models/Order.js";
 import User from "../models/User.js";
 import multer from "multer";
+import sharp from "sharp";
 
 // Memory storage for product images (stored as Base64 in DB)
 const memoryStorage = multer.memoryStorage();
@@ -16,6 +17,28 @@ export const upload = multer({
     }
   },
 });
+
+/**
+ * Compress image for gallery (detail page) — 1200px, 85% WebP
+ */
+async function compressImage(buffer) {
+  const compressed = await sharp(buffer)
+    .resize(1200, 1200, { fit: "inside", withoutEnlargement: true })
+    .webp({ quality: 85 })
+    .toBuffer();
+  return `data:image/webp;base64,${compressed.toString("base64")}`;
+}
+
+/**
+ * Generate lightweight thumbnail for listing — 500px, 80% WebP
+ */
+async function generateThumbnail(buffer) {
+  const compressed = await sharp(buffer)
+    .resize(500, 500, { fit: "inside", withoutEnlargement: true })
+    .webp({ quality: 80 })
+    .toBuffer();
+  return `data:image/webp;base64,${compressed.toString("base64")}`;
+}
 
 // --- Dashboard Stats ---
 export const getDashboardStats = async (req, res) => {
@@ -44,16 +67,27 @@ export const getDashboardStats = async (req, res) => {
 export const addProduct = async (req, res) => {
   try {
     const { title, description, price, category, qty } = req.body;
-    const images = [];
 
-    if (req.files && req.files.length > 0) {
-      for (const file of req.files) {
-        const base64 = file.buffer.toString("base64");
-        images.push(`data:${file.mimetype};base64,${base64}`);
-      }
+    if (title && title.length > 100) {
+      return res.status(400).json({ success: false, message: "Product name cannot exceed 100 characters" });
+    }
+    if (description && description.length > 500) {
+      return res.status(400).json({ success: false, message: "Description cannot exceed 500 characters" });
     }
 
-    const imageSrc = images.length > 0 ? images[0] : "";
+    const images = [];
+    let imageSrc = "";
+
+    if (req.files && req.files.length > 0) {
+      // Generate thumbnail from first image (for fast listing)
+      imageSrc = await generateThumbnail(req.files[0].buffer);
+
+      // Compress all images at higher quality (for detail page)
+      for (const file of req.files) {
+        const compressed = await compressImage(file.buffer);
+        images.push(compressed);
+      }
+    }
 
     const product = await Products.create({
       title,
@@ -84,7 +118,7 @@ export const updateProduct = async (req, res) => {
     // Handle image management: keepImages + new uploads
     let finalImages = [];
 
-    // Parse kept existing images
+    // Parse kept existing images (already compressed from before)
     if (updateData.keepImages) {
       try {
         finalImages = JSON.parse(updateData.keepImages);
@@ -94,18 +128,29 @@ export const updateProduct = async (req, res) => {
       delete updateData.keepImages;
     }
 
-    // Add newly uploaded images
+    // Add newly uploaded images (compress them)
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
-        const base64 = file.buffer.toString("base64");
-        finalImages.push(`data:${file.mimetype};base64,${base64}`);
+        const compressed = await compressImage(file.buffer);
+        finalImages.push(compressed);
       }
     }
 
     // Only update images if keepImages was sent (meaning inline edit was used)
     if (req.body.keepImages !== undefined || (req.files && req.files.length > 0)) {
       updateData.images = finalImages;
-      updateData.imageSrc = finalImages.length > 0 ? finalImages[0] : "";
+      // Regenerate thumbnail from first image
+      if (finalImages.length > 0) {
+        // If we have new uploads, use first new file for thumbnail
+        if (req.files && req.files.length > 0 && !req.body.keepImages) {
+          updateData.imageSrc = await generateThumbnail(req.files[0].buffer);
+        } else {
+          // Use first kept/new image as thumbnail (already compressed, just use as-is)
+          updateData.imageSrc = finalImages[0];
+        }
+      } else {
+        updateData.imageSrc = "";
+      }
     }
 
     const product = await Products.findByIdAndUpdate(id, updateData, {
@@ -163,9 +208,11 @@ export const getAllProducts = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const [products, total] = await Promise.all([
       Products.find(filter)
+        .select("-images")
         .sort({ createdAt: -1 })
         .skip(skip)
-        .limit(parseInt(limit)),
+        .limit(parseInt(limit))
+        .lean(),
       Products.countDocuments(filter),
     ]);
 
@@ -237,7 +284,8 @@ export const getAllOrders = async (req, res) => {
   try {
     const orders = await Order.find()
       .sort({ createdAt: -1 })
-      .populate("userId", "name email");
+      .populate("userId", "name email")
+      .lean();
 
     res.json({ success: true, orders });
   } catch (error) {

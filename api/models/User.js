@@ -31,4 +31,6 @@ const userSchema = new mongoose.Schema({
   },
 });
 
+userSchema.index({ createdAt: -1 });
+
 export default mongoose.model("User", userSchema);

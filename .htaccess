@@ -1,0 +1,14 @@
+# ─── Passenger (Node.js) Configuration ───
+# Replace <YOUR_CPANEL_USER> with your actual cPanel username
+PassengerNodejs /home/<YOUR_CPANEL_USER>/nodevenv/giftShop/18/bin/node
+PassengerAppType node
+PassengerStartupFile app.js
+PassengerAppRoot /home/<YOUR_CPANEL_USER>/giftShop
+
+# ─── SPA Fallback (serves index.html for all client-side routes) ───
+RewriteEngine On
+RewriteBase /
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} !^/api/ [NC]
+RewriteRule . /index.html [L]

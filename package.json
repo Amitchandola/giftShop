@@ -1,0 +1,17 @@
+{
+  "name": "giftshop",
+  "version": "1.0.0",
+  "description": "House of Return Gift - Full Stack MERN E-commerce",
+  "type": "module",
+  "scripts": {
+    "start": "node api/server.js",
+    "install-all": "cd api && npm install && cd ../client && npm install",
+    "build-client": "cd client && npm run build && (xcopy dist\\* ..\\dist\\ /E /Y /I 2>nul & xcopy dist\\* ..\\api\\public\\ /E /Y /I 2>nul || (cp -r dist/* ../dist/ && cp -r dist/* ../api/public/))",
+    "build": "npm run install-all && npm run build-client",
+    "dev:api": "cd api && node server.js",
+    "dev:client": "cd client && npm run dev"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

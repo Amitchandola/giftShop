@@ -115,6 +115,13 @@ export const updateProduct = async (req, res) => {
     const { id } = req.params;
     const updateData = { ...req.body };
 
+    if (updateData.title && updateData.title.length > 100) {
+      return res.status(400).json({ success: false, message: "Product name cannot exceed 100 characters" });
+    }
+    if (updateData.description && updateData.description.length > 500) {
+      return res.status(400).json({ success: false, message: "Description cannot exceed 500 characters" });
+    }
+
     // Handle image management: keepImages + new uploads
     let finalImages = [];
 

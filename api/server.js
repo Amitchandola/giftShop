@@ -104,6 +104,12 @@ mongoose
   })
   .then(() => {
     console.log("Connected to MongoDB");
+
+    // Keep MongoDB Atlas free tier alive — ping every 4 minutes to prevent cold starts
+    setInterval(() => {
+      mongoose.connection.db.admin().ping().catch(() => {});
+    }, 4 * 60 * 1000);
+
     app.listen(port, () => {
       console.log(`Server is running on port ${port}`);
     });

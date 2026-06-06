@@ -149,16 +149,33 @@ function AdminPanel() {
     }
   };
 
-  const startInlineEdit = (product) => {
+  const startInlineEdit = async (product) => {
     setExpandedProduct(product._id);
     setInlineEdit({
+      title: product.title,
       price: product.price,
       description: product.description,
       qty: product.qty,
-      existingImages: product.images || [],
+      existingImages: [],
       removedImages: [],
+      loadingImages: true,
     });
     setInlineImages([]);
+
+    // Fetch full product with images (listing doesn't include images)
+    try {
+      const res = await axios.get(`${url}/admin/products/${product._id}`, {
+        headers: authHeader,
+        withCredentials: true,
+      });
+      setInlineEdit((prev) => ({
+        ...prev,
+        existingImages: res.data.product?.images || [],
+        loadingImages: false,
+      }));
+    } catch {
+      setInlineEdit((prev) => ({ ...prev, loadingImages: false }));
+    }
   };
 
   const handleRemoveImage = (index) => {
@@ -176,6 +193,7 @@ function AdminPanel() {
     try {
       setLoading(true);
       const formData = new FormData();
+      formData.append("title", inlineEdit.title);
       formData.append("price", inlineEdit.price);
       formData.append("description", inlineEdit.description);
       formData.append("qty", inlineEdit.qty);
@@ -581,6 +599,17 @@ function AdminPanel() {
                 {/* Expanded inline edit */}
                 {expandedProduct === p._id && inlineEdit.price !== undefined && (
                   <div className="px-4 pb-4 border-t border-gray-700 pt-4 space-y-4">
+                    {/* Title */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-400 mb-1">Title</label>
+                      <input
+                        type="text"
+                        value={inlineEdit.title || ""}
+                        onChange={(e) => setInlineEdit({ ...inlineEdit, title: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-amber-400/50 outline-none text-sm"
+                      />
+                    </div>
+
                     {/* Price, Qty row */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
@@ -617,7 +646,9 @@ function AdminPanel() {
                     </div>
 
                     {/* Existing Images with remove */}
-                    {inlineEdit.existingImages && inlineEdit.existingImages.length > 0 && (
+                    {inlineEdit.loadingImages ? (
+                      <p className="text-xs text-gray-500">Loading images...</p>
+                    ) : inlineEdit.existingImages && inlineEdit.existingImages.length > 0 && (
                       <div>
                         <label className="block text-xs font-medium text-gray-400 mb-2">Current Images (click X to remove)</label>
                         <div className="flex gap-3 flex-wrap">

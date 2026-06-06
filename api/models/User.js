@@ -1,0 +1,36 @@
+import mongoose from "mongoose";
+
+const userSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  password: {
+    type: String,
+    required: false,
+  },
+  isAdmin: {
+    type: Boolean,
+    default: false,
+  },
+    isGuest: {
+    type: Boolean,
+    default: false,   // 
+  },
+   phone: {
+    type: String,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+userSchema.index({ createdAt: -1 });
+
+export default mongoose.model("User", userSchema);

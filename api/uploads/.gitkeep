@@ -1,0 +1,3 @@
+# Uploads Directory
+This folder stores user-uploaded files (payment screenshots, etc.) at runtime.
+Do not commit uploaded files to the repository.
